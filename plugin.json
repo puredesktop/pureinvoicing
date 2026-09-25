@@ -1,0 +1,2557 @@
+{
+  "id": "invoicing",
+  "name": "PureInvoicing",
+  "permissions": [
+    "settings",
+    "agents",
+    "filesystem",
+    "render"
+  ],
+  "entrypoint": {
+    "kind": "dev-url",
+    "url": "http://localhost:5490"
+  },
+  "app": {
+    "id": "plugin.invoicing",
+    "slug": "invoicing",
+    "name": "PureInvoicing",
+    "navigationLabel": "Invoicing",
+    "productName": "ps.invoicing",
+    "kind": "desktop",
+    "description": "Outgoing invoices: prepare them, issue them as numbered PDFs, and keep track of what was sent and paid.",
+    "usePureDesktopAiPanel": true,
+    "brand": {
+      "letter": "i",
+      "label": "Invoice"
+    },
+    "agents": {
+      "tools": [
+        {
+          "name": "getWorkspaceState",
+          "description": "Read first-use and setup status, the business identity and default terms, default template, the number pattern (e.g. PS-{YYYY}-{NNN}) with the next counter and the label it will produce, archive counts, this year's invoiced/collected/outstanding totals by currency, per-client history, supported currencies and presentation options, and metadata for user-uploaded logo and PDF assets. Does not export attachment contents.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {},
+            "additionalProperties": false
+          },
+          "requiresApproval": false,
+          "risk": "read"
+        },
+        {
+          "name": "searchInvoices",
+          "description": "Search the archive by number, client or reference and filter by status: draft, issued (all finalized), open (issued and not marked paid), sent, overdue (past due and not paid), paid. Returns IDs, numbers and their labels (numberText), recipient, dates, totals, standing marks, days overdue, historical labels, correction availability, latest version, and pagination. Does not alter the user's saved work or navigation state.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "query": {
+                "type": "string"
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "all",
+                  "draft",
+                  "issued",
+                  "open",
+                  "sent",
+                  "overdue",
+                  "paid"
+                ]
+              },
+              "clientId": {
+                "type": "string"
+              },
+              "historicalOnly": {
+                "type": "boolean"
+              },
+              "sortBy": {
+                "type": "string",
+                "enum": [
+                  "updatedAt",
+                  "invoiceDate",
+                  "number",
+                  "client"
+                ]
+              },
+              "sortDirection": {
+                "type": "string",
+                "enum": [
+                  "ascending",
+                  "descending"
+                ]
+              },
+              "cursor": {
+                "type": "string"
+              },
+              "limit": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 100
+              }
+            },
+            "additionalProperties": false
+          },
+          "requiresApproval": false,
+          "risk": "read"
+        },
+        {
+          "name": "getInvoice",
+          "description": "Read an invoice's saved details, content and appearance snapshots, calculated totals, save status, PDF availability and provenance, source link, and chronological version and reissue history. An issued invoice defaults to its current issued version and separately identifies any correction draft. A selected older version is explicitly marked superseded.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "invoiceId": {
+                "type": "string"
+              },
+              "versionId": {
+                "type": "string",
+                "description": "Optional retained issued version to inspect."
+              },
+              "includeCorrection": {
+                "type": "boolean",
+                "description": "Include the saved unpublished correction content, if present."
+              }
+            },
+            "required": [
+              "invoiceId"
+            ],
+            "additionalProperties": false
+          },
+          "requiresApproval": false,
+          "risk": "read"
+        },
+        {
+          "name": "searchClients",
+          "description": "Read or search reusable client records, returning IDs, names, billing addresses, contact details, and tax identifiers with pagination.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "query": {
+                "type": "string"
+              },
+              "clientId": {
+                "type": "string"
+              },
+              "cursor": {
+                "type": "string"
+              },
+              "limit": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 100
+              }
+            },
+            "additionalProperties": false
+          },
+          "requiresApproval": false,
+          "risk": "read"
+        },
+        {
+          "name": "saveClient",
+          "description": "Explicitly create a reusable client or update supplied fields of an existing client. Does not change recipient snapshots in any invoice. A new client requires a nonempty name.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "clientId": {
+                "type": "string",
+                "description": "Omit to create a client."
+              },
+              "details": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "billingAddress": {
+                    "type": "string"
+                  },
+                  "contactName": {
+                    "type": "string"
+                  },
+                  "email": {
+                    "type": "string"
+                  },
+                  "phone": {
+                    "type": "string"
+                  },
+                  "taxIdentifier": {
+                    "type": "string"
+                  },
+                  "termsDays": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "description": "Usual payment terms for this client, in days."
+                  },
+                  "currency": {
+                    "type": "string",
+                    "description": "Usual invoicing currency, an ISO 4217 code."
+                  }
+                },
+                "minProperties": 1,
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "details"
+            ],
+            "additionalProperties": false
+          },
+          "requiresApproval": true
+        },
+        {
+          "name": "updateBusinessIdentity",
+          "description": "Save supplied fields of the single business identity and default payment instructions. Allows incomplete setup and returns missing setup requirements. Existing invoice snapshots remain unchanged.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "details": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "address": {
+                    "type": "string"
+                  },
+                  "email": {
+                    "type": "string"
+                  },
+                  "phone": {
+                    "type": "string"
+                  },
+                  "website": {
+                    "type": "string"
+                  },
+                  "registrationIdentifier": {
+                    "type": "string"
+                  },
+                  "taxIdentifier": {
+                    "type": "string"
+                  },
+                  "defaultPaymentInstructions": {
+                    "type": "string"
+                  },
+                  "defaultTermsDays": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "description": "Default payment terms for new drafts, in days."
+                  }
+                },
+                "minProperties": 1,
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "details"
+            ],
+            "additionalProperties": false
+          },
+          "requiresApproval": true
+        },
+        {
+          "name": "setNextInvoiceNumber",
+          "description": "Establish the verified next whole-number identifier or move the existing sequence forward. Rejects conflicts and backward movement into reserved sequence positions. Returns the effective next number and any resulting gap. Cannot detect conflicts with invoices not registered in this app.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "nextNumber": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "unregisteredHistoryChecked": {
+                "type": "boolean",
+                "const": true,
+                "description": "The user has explicitly verified this starting point against invoices outside the archive."
+              }
+            },
+            "required": [
+              "nextNumber",
+              "unregisteredHistoryChecked"
+            ],
+            "additionalProperties": false
+          },
+          "requiresApproval": true
+        },
+        {
+          "name": "createInvoiceDraft",
+          "description": "Create and save a blank draft using current business and template defaults, or a separate draft copied from a prior invoice. Copying uses its current issued version unless a retained source version is specified, links the source, copies editable content and appearance, resets invoice date to local today, clears due date and reference, and never copies its number. Returns the draft ID, saved contents, calculated totals, and provisional next number.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "sourceInvoiceId": {
+                "type": "string"
+              },
+              "sourceVersionId": {
+                "type": "string",
+                "description": "Requires sourceInvoiceId."
+              }
+            },
+            "dependentRequired": {
+              "sourceVersionId": [
+                "sourceInvoiceId"
+              ]
+            },
+            "additionalProperties": false
+          },
+          "requiresApproval": true
+        },
+        {
+          "name": "updateInvoiceDraft",
+          "description": "Save supplied content fields of an ordinary draft or unpublished correction without modifying issued versions. Omitted fields are preserved; empty strings or null dates clear values. A supplied lineItems array replaces the complete ordered list. Incomplete work is permitted, and the result includes saved state, authoritative recalculated totals, field diagnostics, and a price-review warning if currency changes. Currency changes never convert prices.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "draftId": {
+                "type": "string"
+              },
+              "changes": {
+                "type": "object",
+                "properties": {
+                  "sender": {
+                    "$ref": "#/$defs/partyPatch"
+                  },
+                  "recipient": {
+                    "$ref": "#/$defs/partyPatch"
+                  },
+                  "invoiceDate": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "format": "date"
+                  },
+                  "dueDate": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "format": "date"
+                  },
+                  "reference": {
+                    "type": "string"
+                  },
+                  "currency": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "pattern": "^[A-Z]{3}$"
+                  },
+                  "lineItems": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "description": {
+                          "type": "string"
+                        },
+                        "quantity": {
+                          "type": [
+                            "number",
+                            "null"
+                          ],
+                          "exclusiveMinimum": 0
+                        },
+                        "unitPrice": {
+                          "type": [
+                            "number",
+                            "null"
+                          ],
+                          "minimum": 0
+                        },
+                        "discountPercent": {
+                          "type": [
+                            "number",
+                            "null"
+                          ],
+                          "minimum": 0,
+                          "maximum": 100
+                        },
+                        "taxPercent": {
+                          "type": [
+                            "number",
+                            "null"
+                          ],
+                          "minimum": 0
+                        }
+                      },
+                      "required": [
+                        "description",
+                        "quantity",
+                        "unitPrice"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "notes": {
+                    "type": "string"
+                  },
+                  "paymentInstructions": {
+                    "type": "string"
+                  },
+                  "termsDays": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 0,
+                    "description": "Payment terms in days after the invoice date; the due date follows while set. Null means a custom due date."
+                  }
+                },
+                "minProperties": 1,
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "draftId",
+              "changes"
+            ],
+            "additionalProperties": false,
+            "$defs": {
+              "partyPatch": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "address": {
+                    "type": "string"
+                  },
+                  "contactName": {
+                    "type": "string"
+                  },
+                  "email": {
+                    "type": "string"
+                  },
+                  "phone": {
+                    "type": "string"
+                  },
+                  "website": {
+                    "type": "string"
+                  },
+                  "registrationIdentifier": {
+                    "type": "string"
+                  },
+                  "taxIdentifier": {
+                    "type": "string"
+                  }
+                },
+                "minProperties": 1,
+                "additionalProperties": false
+              }
+            }
+          },
+          "requiresApproval": true
+        },
+        {
+          "name": "applyDefaultsToDraft",
+          "description": "Explicitly copy selected current defaults into a draft or correction. Business identity replaces sender details, payment defaults replace payment instructions, template replaces appearance, and client copies directory details into the recipient snapshot and records the directory association. Only selected sections change; returns a before-and-after summary.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "draftId": {
+                "type": "string"
+              },
+              "sources": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "businessIdentity",
+                    "paymentInstructions",
+                    "template",
+                    "client"
+                  ]
+                },
+                "minItems": 1,
+                "uniqueItems": true
+              },
+              "clientId": {
+                "type": "string",
+                "description": "Required when sources includes client."
+              }
+            },
+            "required": [
+              "draftId",
+              "sources"
+            ],
+            "additionalProperties": false
+          },
+          "requiresApproval": true
+        },
+        {
+          "name": "updatePresentation",
+          "description": "Save supplied appearance settings to the reusable default template or to one draft or correction. Invoice-local changes do not update defaults; default changes do not alter existing invoices. Validates uploaded logos and returns saved settings and presentation diagnostics. Unprintable settings block finalization rather than deleting content.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "target": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "const": "defaultTemplate"
+                      }
+                    },
+                    "required": [
+                      "kind"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "const": "draft"
+                      },
+                      "draftId": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "draftId"
+                    ],
+                    "additionalProperties": false
+                  }
+                ]
+              },
+              "settings": {
+                "type": "object",
+                "properties": {
+                  "logoAssetId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "Uploaded image ID, or null to remove the logo."
+                  },
+                  "logoWidthMm": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  },
+                  "logoPlacement": {
+                    "enum": [
+                      "left",
+                      "center",
+                      "right"
+                    ]
+                  },
+                  "letterheadText": {
+                    "type": "string"
+                  },
+                  "letterheadAlignment": {
+                    "enum": [
+                      "left",
+                      "center",
+                      "right"
+                    ]
+                  },
+                  "letterheadTextSizePt": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  },
+                  "footerText": {
+                    "type": "string"
+                  },
+                  "footerAlignment": {
+                    "enum": [
+                      "left",
+                      "center",
+                      "right"
+                    ]
+                  },
+                  "footerTextSizePt": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  },
+                  "typeStyle": {
+                    "type": "string",
+                    "description": "A supported type-style identifier returned by getWorkspaceState."
+                  },
+                  "bodyTextSizePt": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  },
+                  "lineSpacing": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  },
+                  "sectionSpacingMm": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "accentColor": {
+                    "type": "string",
+                    "pattern": "^#[0-9A-Fa-f]{6}$"
+                  },
+                  "pageSize": {
+                    "type": "string",
+                    "description": "A supported page-size identifier returned by getWorkspaceState."
+                  },
+                  "marginsMm": {
+                    "type": "object",
+                    "properties": {
+                      "top": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "right": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "bottom": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "left": {
+                        "type": "number",
+                        "minimum": 0
+                      }
+                    },
+                    "required": [
+                      "top",
+                      "right",
+                      "bottom",
+                      "left"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "showPageNumbers": {
+                    "type": "boolean"
+                  }
+                },
+                "minProperties": 1,
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "target",
+              "settings"
+            ],
+            "additionalProperties": false
+          },
+          "requiresApproval": true
+        },
+        {
+          "name": "saveDraftPresentationAsDefault",
+          "description": "Explicitly save the complete appearance of a draft or correction as the reusable default template. Does not alter any other draft or issued document.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "draftId": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "draftId"
+            ],
+            "additionalProperties": false
+          },
+          "requiresApproval": true
+        },
+        {
+          "name": "getInvoicePreview",
+          "description": "Read a paginated in-app preview of a saved draft, correction, or retained issued version, using the PDF layout engine. Returns page count, requested page renderings and text, totals, content and printable-area diagnostics, and provisional or permanent number status outside the document. Does not finalize or export a PDF. Without pageNumbers, returns all pages.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "target": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "draftId": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "draftId"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "invoiceId": {
+                        "type": "string"
+                      },
+                      "versionId": {
+                        "type": "string",
+                        "description": "Omit for the current issued version."
+                      }
+                    },
+                    "required": [
+                      "invoiceId"
+                    ],
+                    "additionalProperties": false
+                  }
+                ]
+              },
+              "pageNumbers": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "minItems": 1,
+                "uniqueItems": true
+              }
+            },
+            "required": [
+              "target"
+            ],
+            "additionalProperties": false
+          },
+          "requiresApproval": false,
+          "risk": "read"
+        },
+        {
+          "name": "startInvoiceCorrection",
+          "description": "Open and save an unpublished same-number correction based on the latest issued version, preserving its content and appearance. Leaves the issued PDF accessible. If a correction already exists, returns that correction without replacing it. Does not reserve or assign another number.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "invoiceId": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "invoiceId"
+            ],
+            "additionalProperties": false
+          },
+          "requiresApproval": true
+        },
+        {
+          "name": "prepareInvoiceFinalization",
+          "description": "Validate saved invoice content and all preview pages and prepare a read-only confirmation for ordinary issue-and-export, same-number correction-and-export, or historical registration. Returns blocking errors or an expiring confirmation token bound to the draft revision, settings, proposed number, totals, action, and supplied registration details or change note. Includes recipient, dates, currency, total, PDF preview, correction differences, historical labels, and sequence impact. Does not assign or reserve a number, publish changes, or export files.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "draftId": {
+                "type": "string"
+              },
+              "action": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "const": "issue"
+                      }
+                    },
+                    "required": [
+                      "kind"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "const": "publishCorrection"
+                      },
+                      "changeNote": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "changeNote"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "const": "registerHistorical"
+                      },
+                      "originalNumber": {
+                        "type": "integer",
+                        "minimum": 1
+                      },
+                      "originalPdfAssetId": {
+                        "type": "string",
+                        "description": "Optional uploaded original PDF, retained as an unverified historical reference."
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "originalNumber"
+                    ],
+                    "additionalProperties": false
+                  }
+                ]
+              }
+            },
+            "required": [
+              "draftId",
+              "action"
+            ],
+            "additionalProperties": false
+          },
+          "requiresApproval": false,
+          "risk": "read"
+        },
+        {
+          "name": "finalizeInvoice",
+          "description": "Commit exactly the approved confirmation from prepareInvoiceFinalization. Atomically rechecks revision, validation, and number uniqueness; rejects stale confirmations rather than changing approved details. Ordinary issuance permanently assigns the next number and retains a version; a correction retains prior versions and publishes under the same number; historical registration retains the entered original-number record and labeled optional reference PDF, advancing the sequence if necessary. Issue and correction actions also prepare and offer the matching PDF with an invoice-number and client filename. Returns publication and PDF outcomes separately, including invoice/version IDs for safe PDF retry. Repeated use of a successfully committed token returns that same result and never creates another issuance.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "confirmationToken": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "confirmationToken"
+            ],
+            "additionalProperties": false
+          },
+          "requiresApproval": true
+        },
+        {
+          "name": "discardInvoiceDraft",
+          "description": "Permanently remove one ordinary draft or discard only one unpublished correction. Returns which work was removed. Never deletes an issued invoice, assigned number, retained version, or issued PDF.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "draftId": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "draftId"
+            ],
+            "additionalProperties": false
+          },
+          "requiresApproval": true,
+          "risk": "destructive"
+        },
+        {
+          "name": "exportInvoicePdf",
+          "description": "Offer an existing invoice PDF for download, generating or retrying the app-produced PDF for the selected immutable issued version if needed. Does not issue an invoice, change content, allocate a number, or create a version. Ordinary download may select an older superseded version or the labeled original historical reference. Reissue always offers the current app-produced issued PDF unchanged and records a brief reissue event without claiming delivery. Returns availability, recognizable filename, version/provenance labels, and any export failure.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "invoiceId": {
+                "type": "string"
+              },
+              "request": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "const": "downloadVersion"
+                      },
+                      "versionId": {
+                        "type": "string",
+                        "description": "Omit for the current issued version."
+                      }
+                    },
+                    "required": [
+                      "kind"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "const": "downloadHistoricalReference"
+                      }
+                    },
+                    "required": [
+                      "kind"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "const": "reissue"
+                      }
+                    },
+                    "required": [
+                      "kind"
+                    ],
+                    "additionalProperties": false
+                  }
+                ]
+              }
+            },
+            "required": [
+              "invoiceId",
+              "request"
+            ],
+            "additionalProperties": false
+          },
+          "requiresApproval": true
+        },
+        {
+          "name": "setHistoricalPdfReference",
+          "description": "Attach, replace, or remove the original reference PDF on a registered historical invoice. Validates that the supplied uploaded asset is a readable PDF before replacing the existing reference. Keeps it labeled as an unverified historical original, distinct from app-produced PDFs, and records the reference change without altering issued content, numbers, or versions. Does not extract or verify invoice details.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "invoiceId": {
+                "type": "string"
+              },
+              "pdfAssetId": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Uploaded PDF ID, or null to remove the historical reference."
+              }
+            },
+            "required": [
+              "invoiceId",
+              "pdfAssetId"
+            ],
+            "additionalProperties": false
+          },
+          "requiresApproval": true
+        },
+        {
+          "name": "markInvoice",
+          "description": "Set or clear a sent or paid mark on an issued invoice. Marks are the user's record, never inferred: sent takes an optional ISO date and recipient, paid an optional ISO date (the day the money arrived, never in the future), payment reference and note; marking paid again edits the payment record, clear removes one mark. Overdue is computed from the due date and cannot be set. Issued content, numbers and versions never change. Read the invoice first with getInvoice.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "invoiceId": {
+                "type": "string"
+              },
+              "mark": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "const": "sent"
+                      },
+                      "at": {
+                        "type": "string",
+                        "description": "ISO date, defaults to today."
+                      },
+                      "to": {
+                        "type": "string",
+                        "description": "Who it went to."
+                      }
+                    },
+                    "required": [
+                      "kind"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "const": "paid"
+                      },
+                      "at": {
+                        "type": "string",
+                        "description": "ISO date, defaults to today."
+                      },
+                      "reference": {
+                        "type": "string",
+                        "description": "Payment reference."
+                      },
+                      "note": {
+                        "type": "string",
+                        "description": "Free note about the payment, e.g. part-paid or paid by a parent company."
+                      }
+                    },
+                    "required": [
+                      "kind"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "const": "clear"
+                      },
+                      "which": {
+                        "type": "string",
+                        "enum": [
+                          "sent",
+                          "paid"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "which"
+                    ],
+                    "additionalProperties": false
+                  }
+                ]
+              }
+            },
+            "required": [
+              "invoiceId",
+              "mark"
+            ],
+            "additionalProperties": false
+          },
+          "requiresApproval": true
+        },
+        {
+          "name": "addInvoiceNote",
+          "description": "Add a working note to an issued invoice, such as a follow-up to do ('Send the corrected PDF to Book Sprints'). Notes are never printed and show in the invoice list until ticked off. Find the invoice with searchInvoices first.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "invoiceId": {
+                "type": "string"
+              },
+              "text": {
+                "type": "string",
+                "description": "The note, e.g. 'Send the corrected PDF to Book Sprints'."
+              }
+            },
+            "required": [
+              "invoiceId",
+              "text"
+            ],
+            "additionalProperties": false
+          },
+          "requiresApproval": true
+        },
+        {
+          "name": "updateInvoiceNote",
+          "description": "Tick an invoice note done (done: true), reopen it (done: false), change its text, or remove it. Read the note ids with getInvoice first.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "invoiceId": {
+                "type": "string"
+              },
+              "noteId": {
+                "type": "string"
+              },
+              "done": {
+                "type": "boolean",
+                "description": "true ticks the note off, false reopens it."
+              },
+              "text": {
+                "type": "string"
+              },
+              "remove": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "invoiceId",
+              "noteId"
+            ],
+            "additionalProperties": false
+          },
+          "requiresApproval": true
+        },
+        {
+          "name": "linkDocument",
+          "description": "Link a contract, statement of work, purchase order or other file to a client (clientId), an issued invoice (invoiceId), an agreement (agreementId) or a contractor (contractorId). The file is linked by path, never copied; linking the same path again updates its kind or name. An invoice also shows its client's documents, so link agreements that cover several invoices to the client.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "clientId": {
+                "type": "string",
+                "description": "Link to this client (give clientId or invoiceId, not both)."
+              },
+              "invoiceId": {
+                "type": "string",
+                "description": "Link to this issued invoice."
+              },
+              "path": {
+                "type": "string",
+                "description": "Absolute path of the file; it stays where it is."
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "contract",
+                  "sow",
+                  "purchase-order",
+                  "other"
+                ]
+              },
+              "name": {
+                "type": "string",
+                "description": "Display name; defaults to the file name."
+              },
+              "agreementId": {
+                "type": "string",
+                "description": "Link to this agreement."
+              },
+              "contractorId": {
+                "type": "string",
+                "description": "Link to this contractor."
+              }
+            },
+            "required": [
+              "path"
+            ],
+            "additionalProperties": false
+          },
+          "requiresApproval": true
+        },
+        {
+          "name": "unlinkDocument",
+          "description": "Remove a document link from a client, invoice, agreement or contractor; the file itself is untouched. Read document ids with getInvoice or searchClients first.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "clientId": {
+                "type": "string"
+              },
+              "invoiceId": {
+                "type": "string"
+              },
+              "documentId": {
+                "type": "string"
+              },
+              "agreementId": {
+                "type": "string",
+                "description": "Link to this agreement."
+              },
+              "contractorId": {
+                "type": "string",
+                "description": "Link to this contractor."
+              }
+            },
+            "required": [
+              "documentId"
+            ],
+            "additionalProperties": false
+          },
+          "requiresApproval": true
+        },
+        {
+          "name": "setNumberFormat",
+          "description": "Set how the invoice counter is written: a pattern with exactly one counter token ({N}, {NN}, {NNN} or longer, zero-padded) and at most one year token ({YYYY} or {YY}), such as PS-{YYYY}-{NNN} or INV-{NNNN}. Changes only how future numbers are written; the counter, its sequence and every issued invoice's label stay as they are. Returns the pattern and the label the next invoice would get.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "pattern": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "pattern"
+            ],
+            "additionalProperties": false
+          },
+          "requiresApproval": true
+        },
+        {
+          "name": "previewInvoiceImport",
+          "description": "Read a pure-invoicing/1 import document (a file path, or a document you assembled from the person's records) and plan it without writing: every problem by path, each row's label, client action, computed total, standing and whether its counter already exists, the clients to create or link, the counter before and after. Always show this to the person before importInvoices. See docs/import-format.md for the fields.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "source": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "path": {
+                        "type": "string",
+                        "description": "Absolute path of a pure-invoicing/1 JSON file; PDFs in it resolve relative to this file."
+                      }
+                    },
+                    "required": [
+                      "path"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "document": {
+                        "type": "object",
+                        "description": "The pure-invoicing/1 document itself, assembled by you (no PDFs are retained this way)."
+                      }
+                    },
+                    "required": [
+                      "document"
+                    ],
+                    "additionalProperties": false
+                  }
+                ]
+              },
+              "skipConflicts": {
+                "type": "boolean",
+                "description": "Plan around rows whose counter is already in the archive instead of failing."
+              }
+            },
+            "required": [
+              "source"
+            ],
+            "additionalProperties": false
+          },
+          "requiresApproval": false,
+          "risk": "read"
+        },
+        {
+          "name": "importInvoices",
+          "description": "Register every invoice in a pure-invoicing/1 document as historical with its original counter and label, its marks and its original PDF (file sources only), creating or linking clients, filling empty business fields and setting the pattern if none, and moving the counter past the highest number, all in one guarded write. Refuses when the preview has problems unless skipConflicts covers them. Nothing already issued changes; imported invoices cannot be deleted afterwards.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "source": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "path": {
+                        "type": "string",
+                        "description": "Absolute path of a pure-invoicing/1 JSON file; PDFs in it resolve relative to this file."
+                      }
+                    },
+                    "required": [
+                      "path"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "document": {
+                        "type": "object",
+                        "description": "The pure-invoicing/1 document itself, assembled by you (no PDFs are retained this way)."
+                      }
+                    },
+                    "required": [
+                      "document"
+                    ],
+                    "additionalProperties": false
+                  }
+                ]
+              },
+              "skipConflicts": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "source"
+            ],
+            "additionalProperties": false
+          },
+          "requiresApproval": true
+        },
+        {
+          "name": "listAgreements",
+          "description": "List agreements (MSAs, SOWs, change orders, NDAs, contractor agreements) with their party, status, value and what has been invoiced against client agreements, plus the totals. Status 'signed' means active. Call this first to find ids.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "status": {
+                "type": "string",
+                "enum": [
+                  "all",
+                  "draft",
+                  "sent",
+                  "signed",
+                  "complete",
+                  "ended"
+                ]
+              },
+              "direction": {
+                "type": "string",
+                "enum": [
+                  "client",
+                  "contractor"
+                ]
+              },
+              "clientId": {
+                "type": "string"
+              },
+              "contractorId": {
+                "type": "string"
+              },
+              "query": {
+                "type": "string"
+              }
+            },
+            "required": [],
+            "additionalProperties": false
+          },
+          "requiresApproval": false,
+          "risk": "read"
+        },
+        {
+          "name": "getAgreement",
+          "description": "Read one agreement in full: sections (with ids), fee, milestones, checks that block sending, invoices billed against it, unbilled retainer months, contractor bills with their check, parent and child agreements.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "agreementId": {
+                "type": "string",
+                "description": "The agreement's id (from listAgreements)."
+              }
+            },
+            "required": [
+              "agreementId"
+            ],
+            "additionalProperties": false
+          },
+          "requiresApproval": false,
+          "risk": "read"
+        },
+        {
+          "name": "createAgreement",
+          "description": "Start an agreement as a draft. A skeleton has headings and bracketed prompts only; the person's wording or saved template fills them. Copy keeps another agreement's structure but empties scope, dates and fee. Use searchClients or searchContractors (saveContractor to add one) for the party id first.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "msa",
+                  "sow",
+                  "change-order",
+                  "nda",
+                  "contractor"
+                ]
+              },
+              "direction": {
+                "type": "string",
+                "enum": [
+                  "client",
+                  "contractor"
+                ],
+                "description": "client: Pure Science does the work and invoices. contractor: someone works for Pure Science and bills it."
+              },
+              "clientId": {
+                "type": "string"
+              },
+              "contractorId": {
+                "type": "string"
+              },
+              "parentId": {
+                "type": "string",
+                "description": "The MSA a SOW sits under, or the agreement a change order amends (required for change orders)."
+              },
+              "title": {
+                "type": "string"
+              },
+              "startFrom": {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "skeleton",
+                      "template",
+                      "copy"
+                    ]
+                  },
+                  "agreementId": {
+                    "type": "string",
+                    "description": "For copy: the agreement whose structure to reuse."
+                  }
+                },
+                "required": [
+                  "kind"
+                ],
+                "additionalProperties": false
+              },
+              "registered": {
+                "type": "object",
+                "description": "Record an agreement already signed elsewhere, with its own number and signing date; it is created active with no text.",
+                "properties": {
+                  "numberText": {
+                    "type": "string"
+                  },
+                  "signedAt": {
+                    "type": "string",
+                    "description": "YYYY-MM-DD"
+                  },
+                  "signedPdfPath": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "numberText",
+                  "signedAt"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "kind",
+              "direction"
+            ],
+            "additionalProperties": false
+          },
+          "requiresApproval": true
+        },
+        {
+          "name": "updateAgreement",
+          "description": "Change a draft's title, dates, fee, payment days, sections or milestones. Once sent, text and terms are fixed (withdraw it to a draft if unsigned, or start a change order). A registered agreement's terms stay editable as a record.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "agreementId": {
+                "type": "string",
+                "description": "The agreement's id (from listAgreements)."
+              },
+              "changes": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "currency": {
+                    "type": "string"
+                  },
+                  "paymentDays": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ]
+                  },
+                  "startDate": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "endDate": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "parentId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "fee": {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "type": "string",
+                        "enum": [
+                          "fixed",
+                          "monthly",
+                          "hourly",
+                          "none"
+                        ]
+                      },
+                      "amount": {
+                        "type": "number"
+                      },
+                      "rate": {
+                        "type": "number"
+                      },
+                      "cap": {
+                        "type": "number",
+                        "description": "Monthly cap for hourly work."
+                      }
+                    },
+                    "required": [
+                      "kind"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "sections": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "heading": {
+                          "type": "string"
+                        },
+                        "body": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "heading",
+                        "body"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "description": "Replaces all sections, in order."
+                  },
+                  "milestones": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "description": "Keep an existing milestone's id to change it; omit for a new one."
+                        },
+                        "label": {
+                          "type": "string"
+                        },
+                        "amount": {
+                          "type": "number"
+                        },
+                        "trigger": {
+                          "type": "string",
+                          "enum": [
+                            "signature",
+                            "done",
+                            "acceptance"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "label",
+                        "amount",
+                        "trigger"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "description": "Replaces the planned payment milestones; for a fixed fee they must add up to it. Invoiced milestones cannot change amount or be removed."
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "agreementId",
+              "changes"
+            ],
+            "additionalProperties": false
+          },
+          "requiresApproval": true
+        },
+        {
+          "name": "editAgreementSection",
+          "description": "Write, change, add or remove one section of a draft agreement. Draft only what the person asked for, from their documents; never invent fees, dates or names: leave [placeholders].",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "agreementId": {
+                "type": "string",
+                "description": "The agreement's id (from listAgreements)."
+              },
+              "sectionId": {
+                "type": "string",
+                "description": "Omit to add a new section."
+              },
+              "heading": {
+                "type": "string"
+              },
+              "body": {
+                "type": "string",
+                "description": "Plain text; blank lines separate paragraphs, lines starting '- ' make a list. Keep [bracketed] placeholders for facts you do not know."
+              },
+              "remove": {
+                "type": "boolean"
+              },
+              "afterSectionId": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "agreementId"
+            ],
+            "additionalProperties": false
+          },
+          "requiresApproval": true
+        },
+        {
+          "name": "sendAgreement",
+          "description": "Mark a draft as sent for signature and give it its number (e.g. PS-SOW-2026-03). Refused while checks block (placeholders, fee and milestones not adding up, no party). Sending the PDF itself is the person's step (exportAgreementPdf).",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "agreementId": {
+                "type": "string",
+                "description": "The agreement's id (from listAgreements)."
+              }
+            },
+            "required": [
+              "agreementId"
+            ],
+            "additionalProperties": false
+          },
+          "requiresApproval": true
+        },
+        {
+          "name": "withdrawAgreement",
+          "description": "Take an agreement that was sent but not signed back to a draft for changes; it keeps its number.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "agreementId": {
+                "type": "string",
+                "description": "The agreement's id (from listAgreements)."
+              }
+            },
+            "required": [
+              "agreementId"
+            ],
+            "additionalProperties": false
+          },
+          "requiresApproval": true
+        },
+        {
+          "name": "markAgreementSigned",
+          "description": "Record that both sides signed. Milestones due on signature become due. The agreement becomes active.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "agreementId": {
+                "type": "string",
+                "description": "The agreement's id (from listAgreements)."
+              },
+              "ours": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "at": {
+                    "type": "string",
+                    "description": "YYYY-MM-DD"
+                  }
+                },
+                "required": [
+                  "name",
+                  "at"
+                ],
+                "additionalProperties": false
+              },
+              "theirs": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "at": {
+                    "type": "string",
+                    "description": "YYYY-MM-DD"
+                  }
+                },
+                "required": [
+                  "name",
+                  "at"
+                ],
+                "additionalProperties": false
+              },
+              "signedPdfPath": {
+                "type": "string",
+                "description": "The signed PDF's path, linked not copied."
+              }
+            },
+            "required": [
+              "agreementId",
+              "ours",
+              "theirs"
+            ],
+            "additionalProperties": false
+          },
+          "requiresApproval": true
+        },
+        {
+          "name": "closeAgreement",
+          "description": "Mark an active agreement complete (work done) or ended (stopped early).",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "agreementId": {
+                "type": "string",
+                "description": "The agreement's id (from listAgreements)."
+              },
+              "how": {
+                "type": "string",
+                "enum": [
+                  "complete",
+                  "ended"
+                ]
+              }
+            },
+            "required": [
+              "agreementId",
+              "how"
+            ],
+            "additionalProperties": false
+          },
+          "requiresApproval": true
+        },
+        {
+          "name": "reopenAgreement",
+          "description": "Make a completed or ended agreement active again.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "agreementId": {
+                "type": "string",
+                "description": "The agreement's id (from listAgreements)."
+              }
+            },
+            "required": [
+              "agreementId"
+            ],
+            "additionalProperties": false
+          },
+          "requiresApproval": true
+        },
+        {
+          "name": "setMilestoneDone",
+          "description": "Mark a milestone of a signed agreement done (or accepted) so it can be invoiced, or undo that before it is invoiced.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "agreementId": {
+                "type": "string",
+                "description": "The agreement's id (from listAgreements)."
+              },
+              "milestoneId": {
+                "type": "string"
+              },
+              "done": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "agreementId",
+              "milestoneId",
+              "done"
+            ],
+            "additionalProperties": false
+          },
+          "requiresApproval": true
+        },
+        {
+          "name": "invoiceAgreementMilestone",
+          "description": "Make the invoice draft for a due milestone of a signed client agreement: the client, currency, payment days, one line for the milestone and a reference to the agreement. Returns draftId; the draft is checked and issued like any invoice.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "agreementId": {
+                "type": "string",
+                "description": "The agreement's id (from listAgreements)."
+              },
+              "milestoneId": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "agreementId",
+              "milestoneId"
+            ],
+            "additionalProperties": false
+          },
+          "requiresApproval": true
+        },
+        {
+          "name": "invoiceAgreementMonth",
+          "description": "Make the invoice draft for one month of an active monthly retainer; each month once. getAgreement lists unbilled months.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "agreementId": {
+                "type": "string",
+                "description": "The agreement's id (from listAgreements)."
+              },
+              "period": {
+                "type": "string",
+                "description": "The month, YYYY-MM."
+              }
+            },
+            "required": [
+              "agreementId",
+              "period"
+            ],
+            "additionalProperties": false
+          },
+          "requiresApproval": true
+        },
+        {
+          "name": "linkInvoiceToAgreement",
+          "description": "Count an existing invoice (issued or draft) as billed against a client agreement, e.g. invoices issued before the agreement was recorded here.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "agreementId": {
+                "type": "string",
+                "description": "The agreement's id (from listAgreements)."
+              },
+              "invoiceId": {
+                "type": "string"
+              },
+              "link": {
+                "type": "boolean",
+                "description": "false unlinks."
+              }
+            },
+            "required": [
+              "agreementId",
+              "invoiceId"
+            ],
+            "additionalProperties": false
+          },
+          "requiresApproval": true
+        },
+        {
+          "name": "addContractorBill",
+          "description": "Record an invoice a contractor sent against their signed agreement. It is checked against the hourly rate and the monthly cap.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "agreementId": {
+                "type": "string",
+                "description": "The agreement's id (from listAgreements)."
+              },
+              "reference": {
+                "type": "string",
+                "description": "Their invoice number."
+              },
+              "period": {
+                "type": "string",
+                "description": "Month billed, YYYY-MM."
+              },
+              "amount": {
+                "type": "number"
+              },
+              "hours": {
+                "type": "number"
+              },
+              "receivedAt": {
+                "type": "string",
+                "description": "YYYY-MM-DD"
+              },
+              "path": {
+                "type": "string",
+                "description": "The bill's PDF, linked by path."
+              }
+            },
+            "required": [
+              "agreementId",
+              "reference",
+              "period",
+              "amount"
+            ],
+            "additionalProperties": false
+          },
+          "requiresApproval": true
+        },
+        {
+          "name": "updateContractorBill",
+          "description": "Mark a contractor bill paid, approve it over the cap, or remove it.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "agreementId": {
+                "type": "string",
+                "description": "The agreement's id (from listAgreements)."
+              },
+              "billId": {
+                "type": "string"
+              },
+              "paidAt": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "YYYY-MM-DD, or null to clear."
+              },
+              "approvedOverCap": {
+                "type": "boolean"
+              },
+              "remove": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "agreementId",
+              "billId"
+            ],
+            "additionalProperties": false
+          },
+          "requiresApproval": true
+        },
+        {
+          "name": "searchContractors",
+          "description": "Find contractors (people or firms who work for Pure Science) and their agreements.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "query": {
+                "type": "string"
+              }
+            },
+            "required": [],
+            "additionalProperties": false
+          },
+          "requiresApproval": false,
+          "risk": "read"
+        },
+        {
+          "name": "saveContractor",
+          "description": "Create or update a contractor's details.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "contractorId": {
+                "type": "string",
+                "description": "Omit to create."
+              },
+              "details": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "contactName": {
+                    "type": "string"
+                  },
+                  "email": {
+                    "type": "string"
+                  },
+                  "address": {
+                    "type": "string"
+                  },
+                  "taxIdentifier": {
+                    "type": "string"
+                  },
+                  "currency": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "details"
+            ],
+            "additionalProperties": false
+          },
+          "requiresApproval": true
+        },
+        {
+          "name": "listAgreementTemplates",
+          "description": "List the person's agreement templates (SOW, contractor agreement, MSA, NDA, change order) with their fee shape, counts, and the fields asked when used. Call this before creating an agreement from a template.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "msa",
+                  "sow",
+                  "change-order",
+                  "nda",
+                  "contractor"
+                ]
+              },
+              "direction": {
+                "type": "string",
+                "enum": [
+                  "client",
+                  "contractor"
+                ]
+              }
+            },
+            "required": [],
+            "additionalProperties": false
+          },
+          "requiresApproval": false,
+          "risk": "read"
+        },
+        {
+          "name": "getAgreementTemplate",
+          "description": "Read a template in full: wording with {{fields}} and [prompts], fields and where each comes from, fee, milestone shares, payment days, and any problems.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "templateId": {
+                "type": "string",
+                "description": "The template's id (from listAgreementTemplates)."
+              }
+            },
+            "required": [
+              "templateId"
+            ],
+            "additionalProperties": false
+          },
+          "requiresApproval": false,
+          "risk": "read"
+        },
+        {
+          "name": "saveAgreementTemplate",
+          "description": "Create or replace a template as a whole. It saves with problems (returned in problems) but cannot be used until every {{key}} in the wording is a field, fee amounts come from asked fields, and milestone shares add up to 100. The wording is the person's: never add legal terms of your own.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "templateId": {
+                "type": "string",
+                "description": "Omit to create a new one."
+              },
+              "template": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "msa",
+                      "sow",
+                      "change-order",
+                      "nda",
+                      "contractor"
+                    ]
+                  },
+                  "direction": {
+                    "type": "string",
+                    "enum": [
+                      "client",
+                      "contractor"
+                    ]
+                  },
+                  "title": {
+                    "type": "string",
+                    "description": "The title with fields, e.g. Statement of Work #{{sequence}} — {{project}}."
+                  },
+                  "sections": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "heading": {
+                          "type": "string"
+                        },
+                        "body": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "heading",
+                        "body"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "fields": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "key": {
+                          "type": "string",
+                          "description": "Letters and digits; written {{key}} in the wording."
+                        },
+                        "label": {
+                          "type": "string"
+                        },
+                        "source": {
+                          "type": "string",
+                          "enum": [
+                            "party",
+                            "partyContact",
+                            "business",
+                            "parentTitle",
+                            "parentNumber",
+                            "parentDate",
+                            "paymentDays",
+                            "sequence",
+                            "today",
+                            "ask"
+                          ],
+                          "description": "Where the value comes from; ask means it is asked when the template is used."
+                        },
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "text",
+                            "number",
+                            "money",
+                            "date"
+                          ]
+                        },
+                        "default": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "key",
+                        "label",
+                        "source"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "fee": {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "type": "string",
+                        "enum": [
+                          "fixed",
+                          "monthly",
+                          "hourly",
+                          "none"
+                        ]
+                      },
+                      "amountField": {
+                        "type": "string"
+                      },
+                      "rateField": {
+                        "type": "string"
+                      },
+                      "capField": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "kind"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "milestones": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "label": {
+                          "type": "string"
+                        },
+                        "share": {
+                          "type": "number",
+                          "description": "Percent of the fixed fee; all add up to 100."
+                        },
+                        "trigger": {
+                          "type": "string",
+                          "enum": [
+                            "signature",
+                            "done",
+                            "acceptance"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "label",
+                        "share",
+                        "trigger"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "paymentDays": {
+                    "description": "A number of days, or 'parent' (from the agreement it sits under, else the client) or 'client'.",
+                    "oneOf": [
+                      {
+                        "type": "integer"
+                      },
+                      {
+                        "type": "string",
+                        "enum": [
+                          "parent",
+                          "client"
+                        ]
+                      }
+                    ]
+                  },
+                  "isDefault": {
+                    "type": "boolean"
+                  },
+                  "origin": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "name",
+                  "kind",
+                  "direction",
+                  "title",
+                  "sections",
+                  "fields",
+                  "fee",
+                  "milestones"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "template"
+            ],
+            "additionalProperties": false
+          },
+          "requiresApproval": true
+        },
+        {
+          "name": "editTemplateSection",
+          "description": "Write, change, add or remove one section of a template. Use {{key}} for existing fields and [bracketed prompts] for what is written each time.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "templateId": {
+                "type": "string",
+                "description": "The template's id (from listAgreementTemplates)."
+              },
+              "index": {
+                "type": "integer",
+                "description": "Section position from 0; omit to add a section."
+              },
+              "heading": {
+                "type": "string"
+              },
+              "body": {
+                "type": "string",
+                "description": "Wording with {{fields}} and [prompts]."
+              },
+              "remove": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "templateId"
+            ],
+            "additionalProperties": false
+          },
+          "requiresApproval": true
+        },
+        {
+          "name": "deleteAgreementTemplate",
+          "description": "Delete a template. Agreements already made from it are unchanged.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "templateId": {
+                "type": "string",
+                "description": "The template's id (from listAgreementTemplates)."
+              }
+            },
+            "required": [
+              "templateId"
+            ],
+            "additionalProperties": false
+          },
+          "requiresApproval": true
+        },
+        {
+          "name": "findAgreementSpecifics",
+          "description": "Find what in a finished agreement belongs to that one deal (party, parent agreement and date, fee, dates, payment days, project name), each with a suggestion of what it becomes in a template. Show these to the person before makeTemplateFromAgreement.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "agreementId": {
+                "type": "string"
+              },
+              "extraPhrases": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Other phrases to offer as prompts."
+              }
+            },
+            "required": [
+              "agreementId"
+            ],
+            "additionalProperties": false
+          },
+          "requiresApproval": false,
+          "risk": "read"
+        },
+        {
+          "name": "makeTemplateFromAgreement",
+          "description": "Make a template from a finished agreement, replacing each chosen specific with a field or a [prompt]. Milestones become shares of the fee. The agreement is not changed.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "agreementId": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "choices": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "text": {
+                      "type": "string"
+                    },
+                    "becomes": {
+                      "type": "object",
+                      "description": "What the text becomes: {as:'field', key, label, source, type?}, {as:'prompt', label} or {as:'keep'}.",
+                      "properties": {
+                        "as": {
+                          "type": "string",
+                          "enum": [
+                            "field",
+                            "prompt",
+                            "keep"
+                          ]
+                        },
+                        "key": {
+                          "type": "string"
+                        },
+                        "label": {
+                          "type": "string"
+                        },
+                        "source": {
+                          "type": "string",
+                          "enum": [
+                            "party",
+                            "partyContact",
+                            "business",
+                            "parentTitle",
+                            "parentNumber",
+                            "parentDate",
+                            "paymentDays",
+                            "sequence",
+                            "today",
+                            "ask"
+                          ],
+                          "description": "Where the value comes from; ask means it is asked when the template is used."
+                        },
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "text",
+                            "number",
+                            "money",
+                            "date"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "as"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "text",
+                    "becomes"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "agreementId",
+              "name",
+              "choices"
+            ],
+            "additionalProperties": false
+          },
+          "requiresApproval": true
+        },
+        {
+          "name": "createOutlineTemplate",
+          "description": "Start a template from the built-in headings (prompts only) to be written in the person's wording, e.g. from a document they point to (then editTemplateSection).",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "msa",
+                  "sow",
+                  "change-order",
+                  "nda",
+                  "contractor"
+                ]
+              },
+              "direction": {
+                "type": "string",
+                "enum": [
+                  "client",
+                  "contractor"
+                ]
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "kind",
+              "direction"
+            ],
+            "additionalProperties": false
+          },
+          "requiresApproval": true
+        },
+        {
+          "name": "previewAgreementFromTemplate",
+          "description": "Show what a template would produce for a party and answers before anything is written: title, sections, fee, milestone amounts, payment days, fields still missing and prompts left.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "templateId": {
+                "type": "string",
+                "description": "The template's id (from listAgreementTemplates)."
+              },
+              "clientId": {
+                "type": "string"
+              },
+              "contractorId": {
+                "type": "string"
+              },
+              "parentId": {
+                "type": "string",
+                "description": "The MSA a SOW sits under, or the agreement a change order amends."
+              },
+              "answers": {
+                "type": "object",
+                "description": "Answers to the template's asked fields, by key."
+              }
+            },
+            "required": [
+              "templateId"
+            ],
+            "additionalProperties": false
+          },
+          "requiresApproval": false,
+          "risk": "read"
+        },
+        {
+          "name": "createAgreementFromTemplate",
+          "description": "Generate a draft agreement from a template for a client or contractor. Unanswered fields become [placeholders], so the draft cannot be sent until they are written.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "templateId": {
+                "type": "string",
+                "description": "The template's id (from listAgreementTemplates)."
+              },
+              "clientId": {
+                "type": "string"
+              },
+              "contractorId": {
+                "type": "string"
+              },
+              "parentId": {
+                "type": "string",
+                "description": "The MSA a SOW sits under, or the agreement a change order amends."
+              },
+              "answers": {
+                "type": "object",
+                "description": "Answers to the template's asked fields, by key."
+              }
+            },
+            "required": [
+              "templateId"
+            ],
+            "additionalProperties": false
+          },
+          "requiresApproval": true
+        },
+        {
+          "name": "discardAgreement",
+          "description": "Delete a draft that was never sent. Sent agreements are never deleted.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "agreementId": {
+                "type": "string",
+                "description": "The agreement's id (from listAgreements)."
+              }
+            },
+            "required": [
+              "agreementId"
+            ],
+            "additionalProperties": false
+          },
+          "requiresApproval": true
+        },
+        {
+          "name": "addAgreementNote",
+          "description": "Add a working note to an agreement (never printed), e.g. a follow-up.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "agreementId": {
+                "type": "string",
+                "description": "The agreement's id (from listAgreements)."
+              },
+              "text": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "agreementId",
+              "text"
+            ],
+            "additionalProperties": false
+          },
+          "requiresApproval": true
+        },
+        {
+          "name": "updateAgreementNote",
+          "description": "Tick an agreement note done, reopen, change or remove it.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "agreementId": {
+                "type": "string",
+                "description": "The agreement's id (from listAgreements)."
+              },
+              "noteId": {
+                "type": "string"
+              },
+              "done": {
+                "type": "boolean"
+              },
+              "text": {
+                "type": "string"
+              },
+              "remove": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "agreementId",
+              "noteId"
+            ],
+            "additionalProperties": false
+          },
+          "requiresApproval": true
+        },
+        {
+          "name": "exportAgreementPdf",
+          "description": "Print the agreement in the invoice template (letterhead, parties, terms, sections, payment schedule, signature lines) and ask the person where to save the PDF.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "agreementId": {
+                "type": "string",
+                "description": "The agreement's id (from listAgreements)."
+              }
+            },
+            "required": [
+              "agreementId"
+            ],
+            "additionalProperties": false
+          },
+          "requiresApproval": true
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,93 @@
+{
+  "format": "pure-invoicing/1",
+  "business": {
+    "name": "Your business",
+    "address": "Street\nCity, region, postcode",
+    "email": "billing@example.com",
+    "paymentInstructions": "Bank name · Account name · Account number · Reference",
+    "termsDays": 15
+  },
+  "numberFormat": "INV-{YYYY}-{NNN}",
+  "clients": [
+    {
+      "key": "acme",
+      "name": "Acme Ltd",
+      "billingAddress": "1 Example Street\nSample City",
+      "contactName": "Pat Example",
+      "email": "ap@acme.example",
+      "termsDays": 30,
+      "currency": "USD"
+    },
+    {
+      "key": "globex",
+      "name": "Globex Corporation",
+      "billingAddress": "9 Sample Avenue\nSample City",
+      "email": "accounts@globex.example"
+    }
+  ],
+  "invoices": [
+    {
+      "number": 1,
+      "label": "INV-2026-001",
+      "client": "acme",
+      "issuedAt": "2026-01-10",
+      "termsDays": 30,
+      "currency": "USD",
+      "reference": "PO 4471",
+      "lines": [
+        {
+          "description": "Consulting, January (4 days)",
+          "quantity": 4,
+          "unitPrice": 1200
+        },
+        {
+          "description": "Travel",
+          "quantity": 1,
+          "unitPrice": 310.5
+        }
+      ],
+      "notes": "Thank you for your business.",
+      "sentAt": "2026-01-10",
+      "sentTo": "ap@acme.example",
+      "paidAt": "2026-02-06",
+      "paidReference": "Wire 20260206-17",
+      "pdf": "pdfs/INV-2026-001.pdf",
+      "total": 5110.5
+    },
+    {
+      "number": 2,
+      "label": "INV-2026-002",
+      "client": "globex",
+      "issuedAt": "2026-02-03",
+      "dueAt": "2026-02-18",
+      "lines": [
+        {
+          "description": "Workshop facilitation",
+          "quantity": 2,
+          "unitPrice": 1500,
+          "discountPercent": 10
+        }
+      ],
+      "sentAt": "2026-02-03"
+    },
+    {
+      "number": 3,
+      "client": {
+        "name": "One-off Client GmbH",
+        "address": "Musterstraße 1\n10115 Berlin",
+        "taxIdentifier": "DE123456789"
+      },
+      "issuedAt": "2026-03-01",
+      "termsDays": 14,
+      "currency": "EUR",
+      "lines": [
+        {
+          "description": "Licence, annual",
+          "quantity": 1,
+          "unitPrice": 990,
+          "taxPercent": 19
+        }
+      ]
+    }
+  ]
+}

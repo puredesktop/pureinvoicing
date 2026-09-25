@@ -1,0 +1,30 @@
+{
+  "name": "@purescience/pureinvoicing",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "node tests/invoice-domain.mjs && node tests/invoice-finalization.mjs && node tests/invoice-rendering.mjs",
+    "puredesktop:check": "node scripts/validate-puredesktop-app.mjs"
+  },
+  "dependencies": {
+    "@purescience/platform-ui": "file:../../packages/ui",
+    "pdfjs-dist": "6.3.289",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "styled-components": "^6.1.18",
+    "@purescience/platform-bridge": "file:../../packages/bridge"
+  },
+  "devDependencies": {
+    "@swc/plugin-styled-components": "^12.9.0",
+    "@types/react": "^19.1.6",
+    "@types/react-dom": "^19.1.5",
+    "@vitejs/plugin-react-swc": "^3.10.2",
+    "typescript": "^5.8.3",
+    "vite": "^6.3.5"
+  },
+  "license": "MIT"
+}
