@@ -29,7 +29,7 @@ Copyright (c) 2026 pure.science inc. Third-party code, dependencies, and assets 
 
 | Project / source | Homepage or documentation | Support the maintainers |
 | --- | --- | --- |
-| [mozilla/pdf](https://github.com/mozilla/pdf) | [Project home](https://github.com/mozilla/pdf) | — |
+| [mozilla/pdf.js](https://github.com/mozilla/pdf.js) | [Homepage / docs](https://mozilla.github.io/pdf.js/) | — |
 | [react/react](https://github.com/react/react) | [Homepage / docs](https://react.dev) | — |
 | [styled-components/styled-components](https://github.com/styled-components/styled-components) | [Homepage / docs](https://styled-components.com) | [GitHub Sponsors](https://github.com/sponsors/quantizor) · [Open Collective](https://opencollective.com/styled-components) |
 
