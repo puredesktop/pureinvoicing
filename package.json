@@ -7,8 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "node tests/invoice-domain.mjs && node tests/invoice-finalization.mjs && node tests/invoice-rendering.mjs",
-    "puredesktop:check": "node scripts/validate-puredesktop-app.mjs"
+    "test": "node tests/invoice-domain.mjs && node tests/invoice-finalization.mjs && node tests/invoice-rendering.mjs"
   },
   "dependencies": {
     "@purescience/platform-ui": "file:../../packages/ui",
