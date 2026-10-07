@@ -42,7 +42,7 @@ try {
   for (const [name, schema] of Object.entries(domainSchemas)) {
     const tool = manifest.app.agents.tools.find(tool => tool.name === name)
     assert.deepEqual(schema, tool.inputSchema)
-    assert.equal(tool.requiresApproval, !['getWorkspaceState', 'getInvoice', 'searchInvoices', 'searchClients', 'getInvoicePreview', 'prepareInvoiceFinalization', 'previewInvoiceImport', 'listAgreements', 'getAgreement', 'searchContractors', 'listAgreementTemplates', 'getAgreementTemplate', 'findAgreementSpecifics', 'previewAgreementFromTemplate'].includes(name))
+    assert.equal(tool.requiresApproval, !['getWorkspaceState', 'getInvoice', 'searchInvoices', 'searchClients', 'getInvoicePreview', 'prepareInvoiceFinalization', 'previewInvoiceImport', 'listAgreements', 'getAgreement', 'searchContractors', 'listAgreementTemplates', 'getAgreementTemplate', 'findAgreementSpecifics', 'previewAgreementFromTemplate', 'listLibrary', 'readLibraryDocument'].includes(name))
   }
   assert.throws(() => validateDomainArguments('updateInvoiceDraft', { draftId: 'a', changes: { number: 4 } }))
   assert.throws(() => validateDomainArguments('setNextInvoiceNumber', { nextNumber: 4, unregisteredHistoryChecked: false }))
@@ -431,5 +431,26 @@ try {
     assert.equal(Object.keys(s.invoices).length, 3); assert.equal(s.sequence.nextNumber, 6); assert.equal(Object.keys(s.clients).length, 1)
     assert.throws(() => imp.applyImport(s, { document: again, plan: imp.planImport(s, again) }), /problems/)
   }
-  console.log('Invoice domain: rounding, schemas, snapshots, defaults, archive, sequence, guarded conflicts, recovery and reload passed.')
+  {
+    // The library: documents kept for invoicing, with their words; a client's query also finds the ones that belong to everyone; the parser takes them.
+    const lib = await load('library'), { emptyStore: fresh } = await load('defaults'), pz = await load('parse'), up = await load('updates')
+    let s = up.saveClient(fresh(), { name: 'CS&S', billingAddress: 'Somewhere' }, 'c1', '2026-10-07T00:00:00Z')
+    s = lib.addLibraryDocument(s, { kind: 'invoice-rules', clientId: 'c1', assetId: 'a1', fileName: 'CSS-invoice-rules.pdf', mimeType: 'application/pdf', text: 'Invoices must quote the PO number and be sent to ap@example.test.' }, 'd1', '2026-10-07T10:00:00Z')
+    s = lib.addLibraryDocument(s, { kind: 'process', assetId: 'a2', fileName: 'How we invoice.md', mimeType: 'text/markdown', text: 'Invoice on the first working day.' }, 'd2', '2026-10-07T11:00:00Z')
+    assert.equal(s.library.d1.title, 'CSS invoice rules')
+    assert.deepEqual(lib.libraryRows(s, { clientId: 'c1' }).map(d => d.id), ['d2', 'd1'])
+    assert.deepEqual(lib.libraryRows(s, { kind: 'invoice-rules' }).map(d => d.id), ['d1'])
+    assert.deepEqual(lib.libraryRows(s, { query: 'po number' }).map(d => d.id), ['d1'])
+    s = lib.updateLibraryDocument(s, 'd2', { clientId: 'c1', notes: '  Applies to every client.  ' }, '2026-10-07T12:00:00Z')
+    assert.equal(s.library.d2.clientId, 'c1'); assert.equal(s.library.d2.notes, 'Applies to every client.')
+    assert.throws(() => lib.updateLibraryDocument(s, 'd2', { clientId: 'nope' }, '2026-10-07T12:00:00Z'), /Client not found/)
+    assert.throws(() => lib.updateLibraryDocument(s, 'd2', { title: ' ' }, '2026-10-07T12:00:00Z'), /title/)
+    assert.equal(lib.libraryExcerpt({ ...s.library.d1, text: 'x'.repeat(13000) }).clipped, true)
+    pz.parseStore(structuredClone(s))
+    assert.throws(() => pz.parseStore({ ...s, library: { d1: { ...s.library.d1, kind: 'secret' } } }), /library.d1.kind/)
+    s = lib.removeLibraryDocument(s, 'd1')
+    assert.equal(Object.keys(s.library).length, 1)
+    assert.throws(() => lib.getLibraryDocument(s, 'd1'), /not found/)
+  }
+  console.log('Invoice domain: rounding, schemas, snapshots, defaults, archive, sequence, guarded conflicts, recovery, reload and the library passed.')
 } finally { await rm(temporary, { recursive: true, force: true }) }

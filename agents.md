@@ -164,6 +164,19 @@ agreements are work someone does for Pure Science and bills. Rules:
   rewrite it in the document's own wording with `editTemplateSection`; never
   add legal terms of your own.
 
+## The library
+
+Documents kept for invoicing: a client's invoice rules, a process, a template
+to follow, tax guidance, contract terms, references. Each is a retained copy
+with its words read once (PDF, Word, text), so you can read them without the
+file. `listLibrary` (by kind, client or words; a client's query also gives the
+documents that belong to everyone), `readLibraryDocument` (the words, up to
+12,000 characters). Before drafting or correcting an invoice for a client,
+read their invoice rules and follow them: the references they require, where
+it goes, the format. A document with no readable text (a scan) says so; the
+person opens it. `addLibraryDocumentFromPath` keeps a file the person named;
+`updateLibraryDocument` and `removeLibraryDocument` only when asked.
+
 ## Task to tool
 
 | The person wants | Use |
@@ -189,6 +202,8 @@ agreements are work someone does for Pure Science and bills. Rules:
 | A new SOW like the last one | `listAgreementTemplates`, `previewAgreementFromTemplate`, `createAgreementFromTemplate` |
 | Keep this agreement as a template | `findAgreementSpecifics` → the person chooses → `makeTemplateFromAgreement` |
 | A template from our own document | `createOutlineTemplate`, `editTemplateSection`, `saveAgreementTemplate` |
+| What a client requires on an invoice | `listLibrary` with `clientId`, then `readLibraryDocument` |
+| Keep this file (rules, a process, a template) | `addLibraryDocumentFromPath` with its kind and client |
 
 ## Output style
 

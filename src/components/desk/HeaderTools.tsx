@@ -15,7 +15,7 @@ export function HeaderTools({ product: p, workspace: w }: { product: InvoiceProd
         <Btn $quiet $sm onClick={() => p.openInvoice(null)} title="Back to the archive"><Icon.back />Invoices</Btn>
       ) : (
         <Tabs role="tablist" aria-label="Places">
-          {([['invoices', 'Invoices'], ['agreements', 'Agreements'], ['clients', 'Clients'], ['contractors', 'Contractors']] as const).map(([key, label]) => (
+          {([['invoices', 'Invoices'], ['agreements', 'Agreements'], ['clients', 'Clients'], ['contractors', 'Contractors'], ['library', 'Library']] as const).map(([key, label]) => (
             <Tab key={key} role="tab" aria-selected={p.destination === key} $on={p.destination === key} disabled={!loaded || p.busy} onClick={() => p.navigate(key)}>{label}</Tab>
           ))}
         </Tabs>

@@ -168,6 +168,18 @@ export function useInvoiceProduct(settings: AppSettings, store: InvoiceStore, re
     }),
     selectClient: (clientId: string | null) => run(async () => { await persistEdits(); await navigation.updateNavigation({ destination: 'clients', selectedClientId: clientId }) }),
     selectedAgreementId: navigation.navigation.selectedAgreementId ?? null,
+    selectedLibraryId: navigation.navigation.selectedLibraryId ?? null,
+    openLibraryDocument: (documentId: string | null) => run(async () => { await navigation.updateNavigation({ destination: 'library', selectedLibraryId: documentId }) }),
+    /** Keeps a file the person chooses in the library, with what they said about it, and opens it. */
+    addLibraryDocument: (input: { title?: string; kind?: import('../lib/invoices/types').LibraryKind; clientId?: string; notes?: string }) => run(async () => {
+      const r = await invoiceCommands.addLibraryDocument(input)
+      if (r.cancelled) return
+      setMessage(r.readable ? `Kept ${r.document.title}. Its words were read, so the assistant can use them.` : `Kept ${r.document.title}. No words could be read from it (a scan or a picture); open it to read it.`)
+      await navigation.updateNavigation({ destination: 'library', selectedLibraryId: r.document.id })
+    }),
+    updateLibraryDocument: (documentId: string, changes: import('../lib/invoices/library').LibraryPatch) => run(async () => { await invoiceCommands.updateLibraryDocument({ documentId, changes }) }),
+    removeLibraryDocument: (documentId: string) => run(async () => { await invoiceCommands.removeLibraryDocument({ documentId }); setMessage('Taken out of the library. The copy it kept stays on disk.'); await navigation.updateNavigation({ destination: 'library', selectedLibraryId: null }) }),
+    openLibraryFile: (documentId: string) => run(async () => { const f = await invoiceCommands.libraryDocumentPath({ documentId }); await openLinkedDocument(f.path, f.name) }),
     selectedContractorId: navigation.navigation.selectedContractorId ?? null,
     openAgreement: (agreementId: string | null) => run(async () => { await persistEdits(); await navigation.updateNavigation({ destination: 'agreements', selectedAgreementId: agreementId }) }),
     openContractor: (contractorId: string | null) => run(async () => { await persistEdits(); await navigation.updateNavigation({ destination: 'contractors', selectedContractorId: contractorId }) }),

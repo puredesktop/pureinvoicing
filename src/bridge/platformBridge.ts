@@ -232,6 +232,13 @@ export function chooseDocumentFile() {
   return openPlatformFileDialog()
 }
 
+/** The shell's Word reader (`documents.convert`): a .docx as HTML, for its words. */
+export async function convertPlatformDocument(request: { path: string }): Promise<{ html: string }> {
+  requireShell('Reading a Word document')
+  const r = (await bridge.call('documents.convert', [request])) as { html?: string } | null
+  return { html: r?.html ?? '' }
+}
+
 /** Open a linked document in whichever app handles it. */
 export async function openLinkedDocument(path: string, name?: string) {
   requireShell('Opening a document')

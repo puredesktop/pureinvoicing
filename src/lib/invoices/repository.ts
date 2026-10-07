@@ -29,7 +29,7 @@ function mergeStores(base: InvoiceStore, local: InvoiceStore, remote: InvoiceSto
   for (const key of ['business', 'template', 'sequence'] as const) {
     Object.assign(result, { [key]: select(key, base[key], local[key], remote[key]) })
   }
-  for (const key of ['clients', 'drafts', 'invoices', 'assets', 'documents', 'publications'] as const) {
+  for (const key of ['clients', 'drafts', 'invoices', 'assets', 'documents', 'publications', 'agreements', 'contractors', 'templates', 'library'] as const) {
     const records: Record<string, unknown> = {}
     for (const id of new Set([...Object.keys(base[key] ?? {}), ...Object.keys(local[key] ?? {}), ...Object.keys(remote[key] ?? {})])) {
       const selected = select(`${key}.${id}`, base[key]?.[id], local[key]?.[id], remote[key]?.[id])

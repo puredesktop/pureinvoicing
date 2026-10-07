@@ -10,6 +10,7 @@ import { AgreementsView } from './agreements/AgreementsView'
 import { ContractorsView } from './agreements/ContractorsView'
 import { BusinessView } from './BusinessView'
 import { ClientsView } from './ClientsView'
+import { LibraryView } from './LibraryView'
 import { EditorView } from './EditorView'
 import { IssuedView } from './IssuedView'
 import { Icon } from './bits'
@@ -65,6 +66,8 @@ export function DeskShell({ workspace: w, setup: s, product: p, directory: d, lo
         <ContractorsView product={p} store={w.value} disabled={disabled} />
       ) : p.destination === 'clients' ? (
         <ClientsView product={p} directory={d} store={w.value} disabled={disabled} />
+      ) : p.destination === 'library' ? (
+        <LibraryView product={p} store={w.value} disabled={disabled} />
 
       ) : p.selectedId ? (
         p.issued ? <IssuedView product={p} store={w.value} disabled={disabled} />

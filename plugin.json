@@ -2550,6 +2550,163 @@
             "additionalProperties": false
           },
           "requiresApproval": true
+        },
+        {
+          "name": "listLibrary",
+          "description": "The library: documents kept for invoicing (a client's invoice rules, a process, a template to follow, tax guidance, contract terms, references), each with its title, kind, the client it belongs to (if one), notes and how many characters of its words were read. Filter by kind or client (a client's query also gives the documents that belong to everyone), or search the titles, notes and words. Read one with readLibraryDocument before formatting an invoice for its client.",
+          "risk": "read",
+          "requiresApproval": false,
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "all",
+                  "invoice-rules",
+                  "process",
+                  "template",
+                  "tax",
+                  "contract-terms",
+                  "reference"
+                ]
+              },
+              "clientId": {
+                "type": "string",
+                "description": "A client's id (searchClients): that client's documents and the ones that belong to no client."
+              },
+              "query": {
+                "type": "string"
+              }
+            },
+            "required": [],
+            "additionalProperties": false
+          }
+        },
+        {
+          "name": "readLibraryDocument",
+          "description": "A library document's words (up to 12,000 characters; it says when cut), its notes and what it is. Read a client's invoice rules before drafting or correcting their invoice, and follow them. A file with no readable text (a scan) says so: the person opens it.",
+          "risk": "read",
+          "requiresApproval": false,
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "documentId": {
+                "type": "string",
+                "description": "The document's id (from listLibrary)."
+              }
+            },
+            "required": [
+              "documentId"
+            ],
+            "additionalProperties": false
+          }
+        },
+        {
+          "name": "addLibraryDocumentFromPath",
+          "description": "Keeps a file the person named in the library: a copy is retained and its words read (PDF, Word, text). Say what it is (kind) and whose; a title is taken from the file name unless given. Only for a file the person pointed to.",
+          "requiresApproval": true,
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string",
+                "description": "The file on disk, as the person gave it."
+              },
+              "title": {
+                "type": "string"
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "invoice-rules",
+                  "process",
+                  "template",
+                  "tax",
+                  "contract-terms",
+                  "reference"
+                ]
+              },
+              "clientId": {
+                "type": "string"
+              },
+              "notes": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "path"
+            ],
+            "additionalProperties": false
+          }
+        },
+        {
+          "name": "updateLibraryDocument",
+          "description": "Changes a library document's title, kind, client or notes. Only the fields given change.",
+          "requiresApproval": true,
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "documentId": {
+                "type": "string"
+              },
+              "changes": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "invoice-rules",
+                      "process",
+                      "template",
+                      "tax",
+                      "contract-terms",
+                      "reference"
+                    ]
+                  },
+                  "clientId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "null makes it everyone's."
+                  },
+                  "notes": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "documentId",
+              "changes"
+            ],
+            "additionalProperties": false
+          }
+        },
+        {
+          "name": "removeLibraryDocument",
+          "description": "Takes a document out of the library (the kept copy stays on disk). Only when the person asks.",
+          "requiresApproval": true,
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "documentId": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "documentId"
+            ],
+            "additionalProperties": false
+          }
         }
       ]
     }

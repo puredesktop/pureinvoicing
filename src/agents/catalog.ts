@@ -57,7 +57,12 @@ export const APP_AGENT_TOOL_NAMES = [
   "discardAgreement",
   "addAgreementNote",
   "updateAgreementNote",
-  "exportAgreementPdf"
+  "exportAgreementPdf",
+  "listLibrary",
+  "readLibraryDocument",
+  "addLibraryDocumentFromPath",
+  "updateLibraryDocument",
+  "removeLibraryDocument"
 ] as const
 
 export const APP_AGENT_LOG_LABEL = "invoicing"

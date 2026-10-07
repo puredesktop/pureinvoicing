@@ -2215,4 +2215,134 @@ export const domainSchemas = {
     ],
     "additionalProperties": false
   },
+  "listLibrary": {
+    "type": "object",
+    "properties": {
+      "kind": {
+        "type": "string",
+        "enum": [
+          "all",
+          "invoice-rules",
+          "process",
+          "template",
+          "tax",
+          "contract-terms",
+          "reference"
+        ]
+      },
+      "clientId": {
+        "type": "string",
+        "description": "A client's id (searchClients): that client's documents and the ones that belong to no client."
+      },
+      "query": {
+        "type": "string"
+      }
+    },
+    "required": [],
+    "additionalProperties": false
+  },
+  "readLibraryDocument": {
+    "type": "object",
+    "properties": {
+      "documentId": {
+        "type": "string",
+        "description": "The document's id (from listLibrary)."
+      }
+    },
+    "required": [
+      "documentId"
+    ],
+    "additionalProperties": false
+  },
+  "addLibraryDocumentFromPath": {
+    "type": "object",
+    "properties": {
+      "path": {
+        "type": "string",
+        "description": "The file on disk, as the person gave it."
+      },
+      "title": {
+        "type": "string"
+      },
+      "kind": {
+        "type": "string",
+        "enum": [
+          "invoice-rules",
+          "process",
+          "template",
+          "tax",
+          "contract-terms",
+          "reference"
+        ]
+      },
+      "clientId": {
+        "type": "string"
+      },
+      "notes": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "path"
+    ],
+    "additionalProperties": false
+  },
+  "updateLibraryDocument": {
+    "type": "object",
+    "properties": {
+      "documentId": {
+        "type": "string"
+      },
+      "changes": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "invoice-rules",
+              "process",
+              "template",
+              "tax",
+              "contract-terms",
+              "reference"
+            ]
+          },
+          "clientId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "null makes it everyone's."
+          },
+          "notes": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "required": [
+      "documentId",
+      "changes"
+    ],
+    "additionalProperties": false
+  },
+  "removeLibraryDocument": {
+    "type": "object",
+    "properties": {
+      "documentId": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "documentId"
+    ],
+    "additionalProperties": false
+  }
 } as const

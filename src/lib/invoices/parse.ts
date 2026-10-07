@@ -131,11 +131,25 @@ export function parseStore(value: unknown): InvoiceStore {
     }
   }
   agreementsAndContractors(value)
+  library(value)
   return structuredClone(value) as unknown as InvoiceStore
 }
 const safeKey = (id: string) => !['__proto__', 'constructor', 'prototype'].includes(id)
 const finite = (v: unknown) => typeof v === 'number' && Number.isFinite(v)
 const optionalText = (v: unknown, path: string) => { if (v !== undefined) text(v, path) }
+const LIBRARY_KINDS = ['invoice-rules', 'process', 'template', 'tax', 'contract-terms', 'reference']
+function library(value: Record<string, unknown>): void {
+  if (value.library === undefined) return
+  requireValue(object(value.library), 'library')
+  for (const [id, d] of Object.entries(value.library)) {
+    requireValue(safeKey(id) && object(d) && d.id === id, `library.${id}`)
+    text(d.title, `library.${id}.title`); text(d.assetId, `library.${id}.assetId`); text(d.fileName, `library.${id}.fileName`); text(d.mimeType, `library.${id}.mimeType`)
+    text(d.addedAt, `library.${id}.addedAt`); text(d.updatedAt, `library.${id}.updatedAt`)
+    requireValue(typeof d.text === 'string', `library.${id}.text`)
+    requireValue(LIBRARY_KINDS.includes(String(d.kind)), `library.${id}.kind`)
+    optionalText(d.clientId, `library.${id}.clientId`); optionalText(d.notes, `library.${id}.notes`)
+  }
+}
 function agreementsAndContractors(value: Record<string, unknown>): void {
   if (value.contractors !== undefined) {
     requireValue(object(value.contractors), 'contractors')
@@ -255,10 +269,11 @@ export function parseNavigation(value: Record<string, unknown>): NavigationPrefe
   if (!object(nav)) return structuredClone(defaultNavigation)
   const archive = object(nav.archive) ? nav.archive : {}
   return {
-    destination: ['agreements', 'clients', 'contractors', 'business'].includes(String(nav.destination)) ? nav.destination as NavigationPreferences['destination'] : 'invoices',
+    destination: ['agreements', 'clients', 'contractors', 'library', 'business'].includes(String(nav.destination)) ? nav.destination as NavigationPreferences['destination'] : 'invoices',
     selectedInvoiceId: typeof nav.selectedInvoiceId === 'string' ? nav.selectedInvoiceId : null,
     selectedClientId: typeof nav.selectedClientId === 'string' ? nav.selectedClientId : null,
     selectedAgreementId: typeof nav.selectedAgreementId === 'string' ? nav.selectedAgreementId : null,
+    selectedLibraryId: typeof nav.selectedLibraryId === 'string' ? nav.selectedLibraryId : null,
     selectedContractorId: typeof nav.selectedContractorId === 'string' ? nav.selectedContractorId : null,
     scrollTop: typeof nav.scrollTop === 'number' && Number.isFinite(nav.scrollTop) && nav.scrollTop >= 0 ? nav.scrollTop : 0,
     archive: {

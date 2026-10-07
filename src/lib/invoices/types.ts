@@ -253,6 +253,31 @@ export interface Contractor {
   documents?: LinkedDocument[]
   updatedAt: string
 }
+/** What a kept document is for: the kind decides where it is offered (a client's rules beside their invoices, a tax note beside the business). */
+export type LibraryKind = 'invoice-rules' | 'process' | 'template' | 'tax' | 'contract-terms' | 'reference'
+/**
+ * A document kept for invoicing: a client's invoice rules, a process note,
+ * a template to follow, tax guidance. A copy is retained (an asset), its
+ * text read once so the drawer can use it; it is never printed on an
+ * invoice.
+ */
+export interface LibraryDocument {
+  id: string
+  title: string
+  kind: LibraryKind
+  /** The client it belongs to, when it is one client's. */
+  clientId?: string
+  /** The retained copy. */
+  assetId: string
+  fileName: string
+  mimeType: string
+  /** The document's words, as read when it was added (PDF text, a Word document's text, a text file as it is); empty when the file has no readable text. */
+  text: string
+  notes?: string
+  addedAt: string
+  updatedAt: string
+}
+
 export interface InvoiceStore {
   schemaVersion: 1
   business: Business
@@ -267,6 +292,8 @@ export interface InvoiceStore {
   agreements?: Record<string, Agreement>
   contractors?: Record<string, Contractor>
   templates?: Record<string, AgreementTemplate>
+  /** Documents kept for invoicing (not the rendered-invoice cache, which is `documents`). */
+  library?: Record<string, LibraryDocument>
   /** Superseded by templates; kept so older workspaces still load. */
   agreementTemplates?: Partial<Record<AgreementKind, { heading: string; body: string }[]>>
 }
@@ -279,11 +306,12 @@ export interface ArchiveQuery {
 export interface ClientQuery { query?: string; clientId?: string; cursor?: string; limit?: number }
 export type DefaultSource = 'businessIdentity' | 'paymentInstructions' | 'template' | 'client'
 export interface NavigationPreferences {
-  destination: 'invoices' | 'agreements' | 'clients' | 'contractors' | 'business'
+  destination: 'invoices' | 'agreements' | 'clients' | 'contractors' | 'library' | 'business'
   archive: ArchiveQuery
   selectedInvoiceId: string | null
   selectedClientId?: string | null
   selectedAgreementId?: string | null
+  selectedLibraryId?: string | null
   selectedContractorId?: string | null
   scrollTop: number
 }
