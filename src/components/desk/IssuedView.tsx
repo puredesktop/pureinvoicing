@@ -44,6 +44,7 @@ export function IssuedView({ product: p, store, disabled }: { product: InvoicePr
         {!superseded && standing.mark !== 'paid' ? <Btn disabled={disabled} onClick={() => setPaying(true)}>Mark paid</Btn> : null}
         {!superseded && !invoice.marks?.sentAt ? <Btn disabled={disabled} onClick={() => setMarking('sent')}>Mark sent</Btn> : null}
         {!superseded ? <Btn disabled={disabled || !!correction} onClick={p.startCorrection} title="Same number, new version with a change note">Correct…</Btn> : null}
+        {p.availability?.available ? <Btn disabled={disabled} onClick={p.openPdf} title="Opens the retained PDF in its own window; nothing is exported"><Icon.file />Open PDF</Btn> : null}
         <Btn $acc disabled={disabled} onClick={() => p.download({ kind: 'downloadVersion', versionId: version.id })}><Icon.download />{superseded ? 'Download superseded PDF' : 'Download PDF'}</Btn>
       </TopBar>
       <Body>

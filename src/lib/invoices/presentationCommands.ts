@@ -75,6 +75,17 @@ export function createPresentationCommands(repository: InvoiceRepository) {
         return { available: false, invoiceId, versionId: version.id, error: error instanceof Error ? error.message : String(error) }
       }
     },
+    /** The retained PDF of a version, as a file the shell can open: its path, once the file is read and found whole. Null when none is retained yet. */
+    async retainedPdfPath(invoiceId: string, versionId?: string) {
+      const store = await repository.current(), invoice = getIssued(store, invoiceId), version = getVersion(store, invoiceId, versionId)
+      const id = await documentIdForVersion(store, version.content, invoice.number, issuedLabel(store, invoice))
+      const assetId = store.documents?.[id]?.pdfAssetId ?? version.pdf?.assetId
+      if (!assetId) return null
+      await readRetainedAsset(store, assetId, 'pdf')
+      const asset = store.assets[assetId]
+      if (!asset?.path) return null
+      return { path: asset.path, name: asset.name }
+    },
     async exportInvoicePdf(args: { invoiceId: string; request: PdfRequest }) {
       const store = await repository.refresh(), invoice = getIssued(store, args.invoiceId)
       const version = getVersion(store, invoice.id, args.request.kind === 'downloadVersion' ? args.request.versionId : undefined)

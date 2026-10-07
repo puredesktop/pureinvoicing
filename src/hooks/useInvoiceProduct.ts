@@ -62,6 +62,18 @@ export function useInvoiceProduct(settings: AppSettings, store: InvoiceStore, re
   const selected = store.drafts[navigation.navigation.selectedInvoiceId ?? '']
   const content = selected ? edits[selected.id] ?? selected.content : null
   const currentPreviewKey = JSON.stringify([selected?.id, content, selected?.currencyReviewRequired, store.sequence, issued?.currentVersionId, version?.id])
+  // An issued invoice renders its own pages when opened (a draft's render below is debounced behind its edits).
+  useEffect(() => {
+    if (!issued || !version || selected || preview || busy || error) return
+    let active = true
+    invoiceCommands.getInvoicePreview({ target: { invoiceId: issued.id, versionId: version.id } }).then(result => {
+      if (active) { setPreview(result); setPreviewKey(currentPreviewKey) }
+    }).catch(error => {
+      console.error('Issued preview failed', error)
+      if (active) setError(error instanceof Error ? error.message : String(error))
+    })
+    return () => { active = false }
+  }, [issued?.id, version?.id, !!selected, !!preview, busy, error])
   async function persistEdits() {
     if (saving.current) await saving.current
     if (!selected || !edits[selected.id]) return
@@ -194,6 +206,13 @@ export function useInvoiceProduct(settings: AppSettings, store: InvoiceStore, re
     }),
     startCorrection: () => run(async () => { if (issued) { const draft = await invoiceCommands.startInvoiceCorrection({ invoiceId: issued.id }); await openInvoice(draft.id) } }),
     copyInvoice: () => run(async () => { if (issued && version) { const draft = await invoiceCommands.createInvoiceDraft({ sourceInvoiceId: issued.id, sourceVersionId: version.id }); await openInvoice(draft.id) } }),
+    /** Opens the retained PDF in the shell's viewer (nothing is exported or re-rendered); one not retained yet is prepared by Download. */
+    openPdf: () => run(async () => {
+      if (!issued) return
+      const file = await invoiceCommands.retainedPdfPath(issued.id, version?.id)
+      if (!file) throw new Error('This version’s PDF is not retained yet: Download PDF prepares and keeps it.')
+      await openLinkedDocument(file.path, file.name)
+    }),
     download: (request: PdfRequest) => run(async () => {
       const invoiceId = issued?.id ?? selected?.correctionOf
       if (!invoiceId) return
