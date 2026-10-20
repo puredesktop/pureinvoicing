@@ -14,6 +14,7 @@ import { Body, Btn, Chip, Field, Input, Kicker, Meta, Mono, Panel, Scrim, Sec, S
 import { AgreementStatusChip, money, parseAmount } from './agreementBits'
 import { NewAgreementSheet, type NewAgreementPreset } from './NewAgreementSheet'
 import { MakeTemplateSheet } from './MakeTemplateSheet'
+import { agentRefs, agreementRefs, billRefs, invoiceRefs, milestoneRefs, sectionRefs } from '../../../lib/agentRefs'
 
 type Details = ReturnType<typeof agreementDetails>
 
@@ -65,7 +66,7 @@ export function AgreementPage({ product: p, store, agreement: a, disabled }: { p
           </> : <Btn $sm disabled={disabled} onClick={() => p.act(() => invoiceCommands.reopenAgreement({ agreementId: a.id }), 'Active again.')}>Reopen</Btn>}
         </>}
       </TopBar>
-      <Body style={{ gap: 0 }}>
+      <Body style={{ gap: 0 }} {...agentRefs(`${a.numberText ?? 'Draft'} · ${a.title}`, agreementRefs(a.id))}>
         <Outline aria-label="Sections">
           <Kicker style={{ padding: '0 8px 6px' }}>Sections</Kicker>
           {a.sections.map(section => {
@@ -76,8 +77,8 @@ export function AgreementPage({ product: p, store, agreement: a, disabled }: { p
           {draft ? <Btn $quiet $sm style={{ marginTop: 6, border: '1px dashed var(--d-line)' }} disabled={disabled} onClick={() => p.act(() => invoiceCommands.editAgreementSection({ agreementId: a.id, heading: 'New section', body: '' }))}><Icon.plus />Section</Btn> : null}
           {!a.sections.length && !draft ? <Meta style={{ padding: '0 8px' }}>{a.registered ? 'Signed elsewhere: its text is the signed file.' : 'No sections.'}</Meta> : null}
           <span style={{ flex: 1 }} />
-          {d.parent ? <div className="card"><b>{d.parent.kind === 'msa' ? 'Under' : 'Amends'}</b><button type="button" onClick={() => p.openAgreement(d.parent!.id)}>{d.parent.title}{d.parent.numberText ? ` · ${d.parent.numberText}` : ''}</button></div> : null}
-          {d.children.length ? <div className="card"><b>Under this one</b>{d.children.map(c => <button key={c.id} type="button" onClick={() => p.openAgreement(c.id)}>{c.title}{c.numberText ? ` · ${c.numberText}` : ''}</button>)}</div> : null}
+          {d.parent ? <div className="card"><b>{d.parent.kind === 'msa' ? 'Under' : 'Amends'}</b><button type="button" {...agentRefs(d.parent.title, agreementRefs(d.parent.id))} onClick={() => p.openAgreement(d.parent!.id)}>{d.parent.title}{d.parent.numberText ? ` · ${d.parent.numberText}` : ''}</button></div> : null}
+          {d.children.length ? <div className="card"><b>Under this one</b>{d.children.map(c => <button key={c.id} type="button" {...agentRefs(c.title, agreementRefs(c.id))} onClick={() => p.openAgreement(c.id)}>{c.title}{c.numberText ? ` · ${c.numberText}` : ''}</button>)}</div> : null}
         </Outline>
         <Desk>
           <Paper>
@@ -94,7 +95,7 @@ export function AgreementPage({ product: p, store, agreement: a, disabled }: { p
               </div>
             ) : null}
             {a.sections.map((section, index) => (
-              <section key={section.id} id={`section-${section.id}`} className={d.checks.some(c => c.sectionId === section.id && c.level === 'block') ? 'todo' : undefined}>
+              <section key={section.id} {...agentRefs(section.heading || 'Untitled section', sectionRefs(section.id))} id={`section-${section.id}`} className={d.checks.some(c => c.sectionId === section.id && c.level === 'block') ? 'todo' : undefined}>
                 <div className="head">
                   <span className="num">{index + 1}</span>
                   {draft ? <LiveInput className="heading" aria-label="Section heading" value={section.heading} disabled={disabled} onCommit={heading => { if (heading !== section.heading) void p.act(() => invoiceCommands.editAgreementSection({ agreementId: a.id, sectionId: section.id, heading })) }} /> : <h2 className="heading">{section.heading}</h2>}
@@ -230,7 +231,7 @@ function MilestonesSection({ p, a, editable, disabled }: { p: InvoiceProduct; a:
         const invoiced = !!m.invoiceId
         const due = !!m.doneAt && !invoiced
         return (
-          <MilestoneRow key={m.id} className={invoiced ? 'invoiced' : due ? 'due' : undefined}>
+          <MilestoneRow key={m.id} {...agentRefs(m.label, milestoneRefs(m.id, m.period))} className={invoiced ? 'invoiced' : due ? 'due' : undefined}>
             <span className="n">{index + 1}</span>
             <div className="body">
               {editable && !invoiced ? <LiveInput aria-label="Milestone" value={m.label} disabled={disabled} onCommit={label => { if (label.trim() && label !== m.label) void commit(current().map(x => x.id === m.id ? { ...x, label } : x)) }} /> : <div className="label">{m.label}</div>}
@@ -263,7 +264,7 @@ function RetainerSection({ p, a, d, disabled }: { p: InvoiceProduct; a: Agreemen
       {a.status !== 'signed' ? <Meta>{a.status === 'draft' || a.status === 'sent' ? 'Each month gets an invoice draft once the agreement is signed and has a start date.' : 'Closed.'}</Meta>
         : !a.startDate ? <Meta>Set the start date so the months can be counted.</Meta> : null}
       {d.unbilledPeriods.length ? <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>{d.unbilledPeriods.map(period => <Btn key={period} $sm $acc={period === d.unbilledPeriods[d.unbilledPeriods.length - 1]} disabled={disabled} onClick={() => p.act(async () => { const r = await invoiceCommands.invoiceAgreementMonth({ agreementId: a.id, period }); await p.openDraft(r.draftId) }, `Invoice drafted for ${periodLabel(period)}.`)}>Invoice {periodLabel(period)}</Btn>)}</div> : a.status === 'signed' && a.startDate ? <Meta>Every month so far is invoiced.</Meta> : null}
-      {months.map(m => <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5 }}><Icon.check /><span style={{ flex: 1 }}>{m.label}</span><Btn $sm $quiet onClick={() => p.openDraft(m.invoiceId!)}>Open invoice</Btn></div>)}
+      {months.map(m => <div key={m.id} {...agentRefs(m.label, milestoneRefs(m.id, m.period), invoiceRefs(m.invoiceId))} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5 }}><Icon.check /><span style={{ flex: 1 }}>{m.label}</span><Btn $sm $quiet onClick={() => p.openDraft(m.invoiceId!)}>Open invoice</Btn></div>)}
     </Sec>
   )
 }
@@ -278,7 +279,7 @@ function BilledSection({ p, a, d, store, disabled }: { p: InvoiceProduct; a: Agr
       <SecHead><h3>Invoiced against it</h3><span className="sp" /><Mono style={{ fontSize: 12.5 }}>{money(billing.invoiced, a.currency)}{billing.agreed ? ` of ${money(billing.agreed, a.currency)}` : ''}</Mono></SecHead>
       {billing.agreed ? <div style={{ height: 6, borderRadius: 999, background: 'var(--d-line)', overflow: 'hidden' }}><div style={{ width: `${Math.min(100, Number(billing.invoiced) / Number(billing.agreed) * 100)}%`, height: 6, background: 'var(--d-ok-ink)' }} /></div> : null}
       {billing.lines.map(line => (
-        <div key={line.invoiceId} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5 }}>
+        <div key={line.invoiceId} {...agentRefs(line.label, invoiceRefs(line.invoiceId), milestoneRefs(line.milestoneId))} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5 }}>
           <Mono style={{ flex: 1 }}>{line.label}</Mono><Chip $tone={tone[line.status]}>{line.status === 'issued' ? 'open' : line.status}</Chip><Mono>{money(line.total, a.currency)}</Mono>
           {line.status !== 'missing' ? <Btn $sm $quiet onClick={() => p.openDraft(line.invoiceId)}>Open</Btn> : null}
           {!line.milestoneId ? <button type="button" aria-label="Unlink" title="Stop counting it against this agreement" style={{ border: 0, background: 'none', color: 'var(--d-faint)', cursor: 'pointer' }} disabled={disabled} onClick={() => p.act(() => invoiceCommands.linkInvoiceToAgreement({ agreementId: a.id, invoiceId: line.invoiceId, link: false }))}><Icon.x /></button> : null}
@@ -311,7 +312,7 @@ function BillsSection({ p, a, d, disabled }: { p: InvoiceProduct; a: Agreement; 
     <Sec>
       <SecHead><h3>Their bills</h3><span className="sp" />{unpaid ? <Mono style={{ fontSize: 12.5 }}>{money(unpaid, a.currency)} unpaid</Mono> : null}</SecHead>
       {d.bills.map(b => (
-        <div key={b.id} style={{ display: 'flex', flexDirection: 'column', gap: 3, padding: '8px 10px', borderRadius: 10, background: 'var(--d-paper)', border: '1px solid var(--d-line)' }}>
+        <div key={b.id} {...agentRefs(b.reference, billRefs(b.id))} style={{ display: 'flex', flexDirection: 'column', gap: 3, padding: '8px 10px', borderRadius: 10, background: 'var(--d-paper)', border: '1px solid var(--d-line)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5 }}><Mono style={{ fontWeight: 600 }}>{b.reference}</Mono><Meta>{periodLabel(b.period)}{b.hours !== undefined ? ` · ${b.hours} h` : ''}</Meta><span style={{ flex: 1 }} /><Mono>{money(b.amount, a.currency)}</Mono></div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
             <Chip $tone={b.check.level === 'ok' ? 'ok' : 'warn'}>{b.check.message}</Chip>

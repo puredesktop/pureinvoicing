@@ -3,6 +3,7 @@ import type { InvoiceProduct } from '../../hooks/useInvoiceProduct'
 import { LIBRARY_KINDS, libraryExcerpt, libraryKindLabel, libraryRows } from '../../lib/invoices/library'
 import type { InvoiceStore, LibraryDocument, LibraryKind } from '../../lib/invoices/types'
 import { Icon, shortDate } from './bits'
+import { agentRefs, libraryRefs } from '../../lib/agentRefs'
 import { Area, Body, Btn, Callout, Card, Chip, Field, Hint, Input, Meta, Panel, Rail, RailRow, SearchBox, Sec, SecHead, Select } from './deskStyles'
 
 /**
@@ -35,7 +36,7 @@ export function LibraryView({ product: p, store, disabled }: { product: InvoiceP
         <div style={{ overflow: 'auto', display: 'flex', flexDirection: 'column', gap: 6, padding: '0 10px 10px' }}>
           {adding ? <AddSheet clients={clients} disabled={disabled} onAdd={input => { setAdding(false); p.addLibraryDocument(input) }} onCancel={() => setAdding(false)} /> : null}
           {rows.map(d => (
-            <Card key={d.id} role="button" tabIndex={0} style={{ padding: '10px 12px', display: 'flex', gap: 10, alignItems: 'center', cursor: 'pointer', ...(d.id === selected?.id ? { borderColor: 'var(--d-acc)', boxShadow: '0 0 0 3px var(--d-acc-soft)' } : {}) }}
+            <Card key={d.id} {...agentRefs(d.title, libraryRefs(d.id))} role="button" tabIndex={0} style={{ padding: '10px 12px', display: 'flex', gap: 10, alignItems: 'center', cursor: 'pointer', ...(d.id === selected?.id ? { borderColor: 'var(--d-acc)', boxShadow: '0 0 0 3px var(--d-acc-soft)' } : {}) }}
               onClick={() => p.openLibraryDocument(d.id)} onKeyDown={e => { if (e.key === 'Enter') p.openLibraryDocument(d.id) }}>
               <Icon.file />
               <div style={{ minWidth: 0, flex: 1 }}>
@@ -48,7 +49,7 @@ export function LibraryView({ product: p, store, disabled }: { product: InvoiceP
           {!rows.length && !adding ? <Meta style={{ padding: '10px 4px' }}>{query || kind !== 'all' ? 'Nothing matches.' : 'Nothing kept yet. A client’s invoice rules, your own process, a template to follow: keep them here and the assistant reads them when it formats an invoice.'}</Meta> : null}
         </div>
       </Panel>
-      <Panel $strong style={{ flex: '1 1 auto', overflow: 'auto' }}>
+      <Panel $strong style={{ flex: '1 1 auto', overflow: 'auto' }} {...(selected ? agentRefs(selected.title, libraryRefs(selected.id)) : {})}>
         {selected ? <DocumentPage key={selected.id} document={selected} store={store} product={p} disabled={disabled} /> : (
           <div style={{ display: 'flex', flex: 1, alignItems: 'center', justifyContent: 'center', minHeight: 240 }}><Meta>Choose a document, or keep a new one.</Meta></div>
         )}

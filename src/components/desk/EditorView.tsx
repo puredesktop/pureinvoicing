@@ -14,6 +14,7 @@ import { PreviewPane } from './PreviewPane'
 import { EmailsInput } from './EmailsInput'
 import { PeopleLookupInput } from './PeopleLookupInput'
 import { Icon, Money } from './bits'
+import { agentRefs, invoiceRefs } from '../../lib/agentRefs'
 import { Area, Body, Btn, Callout, Chip, Dot, Field, Grid, Hint, Input, Main, Meta, Mono, Panel, Sec, SecHead, Select, Switch, TopBar } from './deskStyles'
 
 const COMMON_CURRENCIES = ['USD', 'EUR', 'GBP', 'NZD', 'AUD', 'CAD', 'CHF', 'JPY', 'SEK', 'NOK', 'DKK', 'INR', 'SGD', 'HKD', 'ZAR', 'BRL', 'MXN']
@@ -62,7 +63,7 @@ export function EditorView({ product: p, directory: d, store, disabled }: { prod
         {correction ? <Btn disabled={disabled} onClick={() => p.download({ kind: 'downloadVersion' })} title="The PDF as issued, unchanged by this correction">Issued PDF</Btn> : null}
         <Btn $acc disabled={primaryBlocked} onClick={primary}>{primaryLabel}</Btn>
       </TopBar>
-      <Body style={{ position: 'relative' }}>
+      <Body style={{ position: 'relative' }} {...agentRefs(`${p.label}${correction ? ' · correction' : ' · draft'}`, invoiceRefs(selected.id), invoiceRefs(selected.correctionOf))}>
         <Panel $strong style={{ flex: '0 0 700px', overflow: 'auto' }}>
           <Sec>
             <SecHead><h3>Bill to</h3>{linkedClient ? <Chip $tone="acc">From directory · {linkedClient.name}</Chip> : null}<span className="sp" />

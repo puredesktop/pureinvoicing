@@ -9,6 +9,7 @@ import { AgreementStatusChip, STATUS_DOT, money } from './agreementBits'
 import { NewAgreementSheet, type NewAgreementPreset } from './NewAgreementSheet'
 import { MakeTemplateSheet, type MakeTemplatePreset } from './MakeTemplateSheet'
 import { TemplateEditor, TemplatesLibrary } from './Templates'
+import { agentRefs, agreementRefs } from '../../../lib/agentRefs'
 
 type Place = 'all' | AgreementStatus | 'closed' | 'templates'
 const PLACES: { id: Place; label: string; color?: string }[] = [
@@ -91,7 +92,7 @@ export function AgreementsView({ product: p, store, disabled }: { product: Invoi
                   {groups.map(group => [
                     <tr key={`${group.direction}-head`} style={{ cursor: 'default' }}><td colSpan={6} style={{ background: 'var(--d-well)', padding: '9px 12px 6px' }}><Kicker>{group.direction === 'client' ? 'With clients · Pure Science does the work' : 'With contractors · they do work for Pure Science'}</Kicker></td></tr>,
                     ...group.rows.map(r => (
-                      <tr key={r.id} onClick={() => p.openAgreement(r.id)}>
+                      <tr key={r.id} {...agentRefs(`${r.numberText ?? 'Draft'} · ${r.title}`, agreementRefs(r.id))} onClick={() => p.openAgreement(r.id)}>
                         <td><Mono style={{ whiteSpace: 'nowrap', color: r.numberText ? undefined : 'var(--d-muted)' }}>{r.numberText ?? 'Draft'}</Mono><Hint style={{ display: 'block' }}>{KIND_LABEL[r.kind]}</Hint></td>
                         <td><div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}><Avatar $hue={hueOf(r.party || '?')}>{initials(r.party || '?')}</Avatar><div style={{ minWidth: 0 }}><div style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.party || 'No party yet'}</div><Hint style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.title}</Hint></div></div></td>
                         <td className="c-issued">{r.signedAt ? shortDate(r.signedAt) : <Meta>—</Meta>}</td>

@@ -13,6 +13,7 @@ import { formatMoney } from '../../lib/invoices/money'
 import { searchInvoices } from '../../lib/invoices/queries'
 import type { InvoiceStore } from '../../lib/invoices/types'
 import { Icon, StandingChip, hueOf, initials, shortDate } from './bits'
+import { agentRefs, agreementRefs, clientRefs, invoiceRefs } from '../../lib/agentRefs'
 import { Area, Avatar, Body, Btn, Card, Chip, Field, Grid, Hint, Input, List, Meta, Mono, Panel, Pill, SearchBox, Sec, SecHead, Select, Slot, Stat } from './deskStyles'
 
 /** The directory: every client with what they owe, and one client's details and invoices. */
@@ -45,7 +46,7 @@ export function ClientsView({ product: p, directory: d, store, disabled }: { pro
           {visible.map(candidate => {
             const s = statsFor(candidate.id)
             return (
-              <Card key={candidate.id} style={{ padding: '10px 12px', display: 'flex', gap: 12, alignItems: 'center', cursor: 'pointer', ...(candidate.id === selectedId ? { borderColor: 'var(--d-acc)', boxShadow: '0 0 0 3px var(--d-acc-soft)' } : {}) }} onClick={() => p.selectClient(candidate.id)}>
+              <Card key={candidate.id} {...agentRefs(candidate.name, clientRefs(candidate.id))} style={{ padding: '10px 12px', display: 'flex', gap: 12, alignItems: 'center', cursor: 'pointer', ...(candidate.id === selectedId ? { borderColor: 'var(--d-acc)', boxShadow: '0 0 0 3px var(--d-acc-soft)' } : {}) }} onClick={() => p.selectClient(candidate.id)}>
                 <Avatar $hue={hueOf(candidate.name)} $size={32}>{initials(candidate.name)}</Avatar>
                 <div style={{ minWidth: 0, flex: 1 }}><div style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{candidate.name}</div><Hint>{s ? `${s.count} invoice${s.count === 1 ? '' : 's'} · ${formatMoney(s.invoiced, s.currency)}${s.lastIssuedAt ? ` · last ${shortDate(s.lastIssuedAt.slice(0, 10))}` : ''}` : 'No invoices yet'}</Hint></div>
                 {s?.overdueCount ? <Chip $tone="bad">{s.overdueCount} overdue</Chip> : s && Number(s.outstanding) > 0 ? <Chip $tone="warn">open</Chip> : s ? <Chip $tone="ok">settled</Chip> : null}
@@ -87,7 +88,7 @@ export function ClientsView({ product: p, directory: d, store, disabled }: { pro
                 <PreviewPane pages={p.clientTest.result?.pages ?? null} diagnostics={p.clientTest.result?.diagnostics.filter(x => !x.field.startsWith('pages.')) ?? []} rendering={!p.clientTest.result} caption="a test invoice" />
               </div>
             </TestOverlay> : null}
-            <Sec style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+            <Sec style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }} {...agentRefs(client.name, clientRefs(client.id))}>
               <Avatar $hue={hueOf(client.name)} $size={44}>{initials(client.name)}</Avatar>
               <div style={{ minWidth: 0 }}><div style={{ fontSize: 18, fontWeight: 600, letterSpacing: '-0.01em' }}>{client.name}</div><Meta>{[client.contactName, client.email, client.termsDays !== undefined ? `usual terms ${termsLabel(client.termsDays)}` : null, client.currency].filter(Boolean).join(' · ') || 'No contact details yet'}</Meta></div>
               <span style={{ flex: 1 }} />
@@ -104,7 +105,7 @@ export function ClientsView({ product: p, directory: d, store, disabled }: { pro
             <Sec>
               <SecHead><h3>Agreements</h3><Meta>{Object.values(store.agreements ?? {}).filter(a => a.clientId === client.id).length}</Meta><span className="sp" /><Btn $sm disabled={disabled} onClick={() => p.openAgreement(null)}>All agreements</Btn></SecHead>
               {Object.values(store.agreements ?? {}).filter(a => a.clientId === client.id).map(a => (
-                <Card key={a.id} role="button" tabIndex={0} onClick={() => p.openAgreement(a.id)} onKeyDown={event => { if (event.key === 'Enter') void p.openAgreement(a.id) }} style={{ padding: '9px 12px', display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
+                <Card key={a.id} {...agentRefs(a.title, agreementRefs(a.id))} role="button" tabIndex={0} onClick={() => p.openAgreement(a.id)} onKeyDown={event => { if (event.key === 'Enter') void p.openAgreement(a.id) }} style={{ padding: '9px 12px', display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
                   <div style={{ minWidth: 0, flex: 1 }}><div style={{ fontWeight: 600 }}>{a.title}</div><Hint>{a.numberText ?? 'Draft'}</Hint></div>
                   <AgreementStatusChip status={a.status} />
                 </Card>
@@ -122,7 +123,7 @@ export function ClientsView({ product: p, directory: d, store, disabled }: { pro
                 <List style={{ fontSize: 12.5 }}>
                   <thead><tr><th>Number</th><th>Issued</th><th>Due</th><th className="num">Total</th><th>Status</th><th /></tr></thead>
                   <tbody>{invoices.map(row => (
-                    <tr key={row.id} onClick={() => p.openInvoice(row.id)}>
+                    <tr key={row.id} {...agentRefs(`${(row.status === 'draft' ? row.provisionalNumberText : row.numberText) ?? 'Invoice'} · ${client.name}`, invoiceRefs(row.id, row.correctionId))} onClick={() => p.openInvoice(row.id)}>
                       <td><Mono style={{ color: row.status === 'draft' ? 'var(--d-muted)' : undefined }}>{row.status === 'draft' ? row.provisionalNumberText : row.numberText}</Mono></td>
                       <td>{row.status === 'draft' ? <Meta>—</Meta> : shortDate(row.invoiceDate)}</td>
                       <td style={{ color: row.mark === 'overdue' ? 'var(--d-bad-ink)' : undefined }}>{row.dueDate ? shortDate(row.dueDate) : <Meta>—</Meta>}</td>

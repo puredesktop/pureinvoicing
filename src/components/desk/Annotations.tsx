@@ -3,6 +3,7 @@ import { styled } from 'styled-components'
 import { DOCUMENT_KINDS, documentKindLabel } from '../../lib/invoices/annotations'
 import type { InvoiceNote, LinkedDocument } from '../../lib/invoices/types'
 import { Icon, shortDate } from './bits'
+import { agentRefs, linkedDocumentRefs, noteRefs } from '../../lib/agentRefs'
 import { Btn, Kicker, Meta, Mono, Scrim, Select, Sheet } from './deskStyles'
 
 type NoteChange = { done?: boolean; text?: string; remove?: boolean }
@@ -19,7 +20,7 @@ export function NotesList({ notes, disabled, onAdd, onUpdate, autoFocus }: { not
   const open = notes.filter(n => !n.doneAt), done = notes.filter(n => n.doneAt)
   const add = () => { if (!draft.trim()) return; onAdd(draft); setDraft('') }
   const row = (note: InvoiceNote) => (
-    <li key={note.id} className={note.doneAt ? 'done' : undefined}>
+    <li key={note.id} className={note.doneAt ? 'done' : undefined} {...agentRefs(note.text.length > 60 ? `${note.text.slice(0, 60)}…` : note.text, noteRefs(note.id))}>
       <button type="button" className="tick" role="checkbox" aria-checked={!!note.doneAt} aria-label={note.doneAt ? 'Mark not done' : 'Mark done'} disabled={disabled} onClick={() => onUpdate(note.id, { done: !note.doneAt })}>{note.doneAt ? <Icon.check /> : null}</button>
       <div className="body"><span>{note.text}</span><small>{note.doneAt ? `done ${shortDate(note.doneAt.slice(0, 10))}` : shortDate(note.at.slice(0, 10))}</small></div>
       <button type="button" className="rm" aria-label="Remove note" title="Remove note" disabled={disabled} onClick={() => onUpdate(note.id, { remove: true })}><Icon.x /></button>
@@ -81,7 +82,7 @@ export function DocumentsList({ documents, disabled, onLink, onOpen, onUnlink, e
       {documents.length ? (
         <ul>
           {documents.map(doc => (
-            <li key={doc.id}>
+            <li key={doc.id} {...agentRefs(doc.name, linkedDocumentRefs(doc.id, doc.path))}>
               <button type="button" className="open" title={doc.path} onClick={() => onOpen(doc)} disabled={disabled}>
                 <Icon.file /><span className="name">{doc.name}</span>
                 <span className="kind">{documentKindLabel(doc.kind)}{doc.from === 'client' ? ' · client' : ''}</span>

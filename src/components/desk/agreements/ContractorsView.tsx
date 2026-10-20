@@ -8,6 +8,7 @@ import { EmailsInput } from '../EmailsInput'
 import { Icon, hueOf, initials } from '../bits'
 import { Area, Avatar, Body, Btn, Card, Field, Hint, Input, Meta, Mono, Panel, SearchBox, Sec, SecHead, Stat } from '../deskStyles'
 import { AgreementStatusChip, money } from './agreementBits'
+import { agentRefs, agreementRefs, billRefs, contractorRefs } from '../../../lib/agentRefs'
 import { NewAgreementSheet, type NewAgreementPreset } from './NewAgreementSheet'
 
 type Details = Omit<Contractor, 'id' | 'updatedAt' | 'documents'>
@@ -47,7 +48,7 @@ export function ContractorsView({ product: p, store, disabled }: { product: Invo
           {visible.map(c => {
             const theirs = agreementsOf(c.id), active = theirs.filter(a => a.status === 'signed').length
             return (
-              <Card key={c.id} role="button" tabIndex={0} onClick={() => p.openContractor(c.id)} onKeyDown={event => { if (event.key === 'Enter') void p.openContractor(c.id) }} style={{ padding: '10px 12px', display: 'flex', gap: 12, alignItems: 'center', cursor: 'pointer', ...(c.id === selectedId ? { borderColor: 'var(--d-acc)', boxShadow: '0 0 0 3px var(--d-acc-soft)' } : {}) }}>
+              <Card key={c.id} {...agentRefs(c.name, contractorRefs(c.id))} role="button" tabIndex={0} onClick={() => p.openContractor(c.id)} onKeyDown={event => { if (event.key === 'Enter') void p.openContractor(c.id) }} style={{ padding: '10px 12px', display: 'flex', gap: 12, alignItems: 'center', cursor: 'pointer', ...(c.id === selectedId ? { borderColor: 'var(--d-acc)', boxShadow: '0 0 0 3px var(--d-acc-soft)' } : {}) }}>
                 <Avatar $hue={hueOf(c.name)} $size={32}>{initials(c.name)}</Avatar>
                 <div style={{ minWidth: 0, flex: 1 }}><div style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</div><Hint>{theirs.length ? `${theirs.length} agreement${theirs.length === 1 ? '' : 's'}${active ? ` · ${active} active` : ''}` : 'No agreement yet'}</Hint></div>
               </Card>
@@ -71,7 +72,7 @@ export function ContractorsView({ product: p, store, disabled }: { product: Invo
           </Sec>
         ) : contractor ? (
           <>
-            <Sec style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+            <Sec style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }} {...agentRefs(contractor.name, contractorRefs(contractor.id))}>
               <Avatar $hue={hueOf(contractor.name)} $size={44}>{initials(contractor.name)}</Avatar>
               <div style={{ minWidth: 0 }}><div style={{ fontSize: 18, fontWeight: 600, letterSpacing: '-0.01em' }}>{contractor.name}</div><Meta>{[contractor.contactName, contractor.email, contractor.taxIdentifier ? `tax id ${contractor.taxIdentifier}` : ''].filter(Boolean).join(' · ') || 'No contact details yet'}</Meta></div>
               <span style={{ flex: 1 }} />
@@ -87,7 +88,7 @@ export function ContractorsView({ product: p, store, disabled }: { product: Invo
             <Sec>
               <SecHead><h3>Agreements</h3><Meta>{agreements.length}</Meta></SecHead>
               {agreements.length ? agreements.map(a => (
-                <Card key={a.id} role="button" tabIndex={0} onClick={() => p.openAgreement(a.id)} onKeyDown={event => { if (event.key === 'Enter') void p.openAgreement(a.id) }} style={{ padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
+                <Card key={a.id} {...agentRefs(a.title, agreementRefs(a.id))} role="button" tabIndex={0} onClick={() => p.openAgreement(a.id)} onKeyDown={event => { if (event.key === 'Enter') void p.openAgreement(a.id) }} style={{ padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
                   <div style={{ minWidth: 0, flex: 1 }}><div style={{ fontWeight: 600 }}>{a.title}</div><Hint>{KIND_LABEL[a.kind]}{a.numberText ? ` · ${a.numberText}` : ''}{a.fee.kind === 'hourly' && a.fee.rate ? ` · ${money(a.fee.rate, a.currency)}/hr` : ''}</Hint></div>
                   <AgreementStatusChip status={a.status} />
                 </Card>
@@ -96,7 +97,7 @@ export function ContractorsView({ product: p, store, disabled }: { product: Invo
             <Sec>
               <SecHead><h3>Their bills</h3><Meta>{bills.length}</Meta></SecHead>
               {bills.length ? bills.slice(0, 12).map(b => (
-                <div key={b.id} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 12.5 }}>
+                <div key={b.id} {...agentRefs(`${b.reference} · ${b.agreement.numberText ?? b.agreement.title}`, billRefs(b.id))} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 12.5 }}>
                   <Mono style={{ fontWeight: 600, minWidth: 90 }}>{b.reference}</Mono><Meta style={{ flex: 1 }}>{b.agreement.numberText ?? b.agreement.title}</Meta>
                   <span style={{ color: b.check.level === 'ok' ? 'var(--d-muted)' : 'var(--d-warn-ink)' }}>{b.check.level === 'ok' ? '' : b.check.message}</span>
                   <Mono>{money(b.amount, b.agreement.currency)}</Mono><Meta style={{ minWidth: 70, textAlign: 'right' }}>{b.paidAt ? 'paid' : 'unpaid'}</Meta>

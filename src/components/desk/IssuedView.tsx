@@ -10,6 +10,7 @@ import { PreviewPane } from './PreviewPane'
 import { PaymentDialog } from './PaymentDialog'
 import { DocumentsList, NotesList } from './Annotations'
 import { invoiceDocuments } from '../../lib/invoices/annotations'
+import { agentRefs, agreementRefs, invoiceRefs, versionRefs } from '../../lib/agentRefs'
 
 /** An issued invoice: the document first, and beside it where it stands, its versions and what to do next. */
 export function IssuedView({ product: p, store, disabled }: { product: InvoiceProduct; store: InvoiceStore; disabled: boolean }): React.ReactElement | null {
@@ -47,7 +48,7 @@ export function IssuedView({ product: p, store, disabled }: { product: InvoicePr
         {p.availability?.available ? <Btn disabled={disabled} onClick={p.openPdf} title="Opens the retained PDF in its own window; nothing is exported"><Icon.file />Open PDF</Btn> : null}
         <Btn $acc disabled={disabled} onClick={() => p.download({ kind: 'downloadVersion', versionId: version.id })}><Icon.download />{superseded ? 'Download superseded PDF' : 'Download PDF'}</Btn>
       </TopBar>
-      <Body>
+      <Body {...agentRefs(label, invoiceRefs(invoice.id))}>
         <Main>
           {marking ? (
             <Callout style={{ alignItems: 'center', gap: 10 }}>
@@ -58,7 +59,7 @@ export function IssuedView({ product: p, store, disabled }: { product: InvoicePr
               <Btn $quiet $sm onClick={() => setMarking(null)}>Cancel</Btn>
             </Callout>
           ) : null}
-          {correction ? <Callout $tone="warn" style={{ alignItems: 'center' }}><Icon.info /><span><b>A correction is in progress.</b> The issued PDF stays as it is until you publish it.</span><span className="sp" /><Btn $sm disabled={disabled} onClick={() => p.openInvoice(correction.id)}>Continue correction</Btn></Callout> : null}
+          {correction ? <Callout $tone="warn" style={{ alignItems: 'center' }} {...agentRefs(`${label} · correction`, invoiceRefs(correction.id))}><Icon.info /><span><b>A correction is in progress.</b> The issued PDF stays as it is until you publish it.</span><span className="sp" /><Btn $sm disabled={disabled} onClick={() => p.openInvoice(correction.id)}>Continue correction</Btn></Callout> : null}
           {superseded ? <Callout $tone="info"><Icon.info /><span><b>Superseded version.</b> Kept for reference; downloading it never makes it current.{version.changeNote ? ` Replaced with the note: ${version.changeNote}` : ''}</span></Callout> : null}
           <PreviewPane pages={p.preview?.pages ?? null} diagnostics={p.preview?.diagnostics.filter(d => !d.field.startsWith('pages.')) ?? []} rendering={!p.preview && p.busy} caption="the PDF as issued" onRefresh={p.preparePreview} emptyText="Rendering the issued pages…" />
         </Main>
@@ -80,7 +81,7 @@ export function IssuedView({ product: p, store, disabled }: { product: InvoicePr
             const under = Object.values(store.agreements ?? {}).filter(x => x.invoiceIds.includes(invoice.id) || x.milestones.some(m => m.invoiceId === invoice.id))
             return under.length ? <Sec>
               <SecHead><h3>Billed against</h3></SecHead>
-              {under.map(x => <Btn key={x.id} $sm style={{ alignSelf: 'flex-start' }} onClick={() => p.openAgreement(x.id)}>{x.title}{x.numberText ? ` · ${x.numberText}` : ''}{(() => { const m = x.milestones.find(y => y.invoiceId === invoice.id); return m ? ` · ${m.label}` : '' })()}</Btn>)}
+              {under.map(x => <Btn key={x.id} {...agentRefs(x.title, agreementRefs(x.id))} $sm style={{ alignSelf: 'flex-start' }} onClick={() => p.openAgreement(x.id)}>{x.title}{x.numberText ? ` · ${x.numberText}` : ''}{(() => { const m = x.milestones.find(y => y.invoiceId === invoice.id); return m ? ` · ${m.label}` : '' })()}</Btn>)}
             </Sec> : null
           })()}
           <Sec>
@@ -91,7 +92,7 @@ export function IssuedView({ product: p, store, disabled }: { product: InvoicePr
           <Sec>
             <SecHead><h3>Versions</h3><span className="sp" /><Meta>{invoice.versions.length}</Meta></SecHead>
             {invoice.versions.map((candidate, i) => (
-              <Card key={candidate.id} style={{ padding: '9px 12px', display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', borderColor: candidate.id === version.id ? 'var(--d-acc)' : undefined }} onClick={() => p.selectVersion(candidate.id)}>
+              <Card key={candidate.id} {...agentRefs(`${label} · version ${i + 1}`, versionRefs(candidate.id))} style={{ padding: '9px 12px', display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', borderColor: candidate.id === version.id ? 'var(--d-acc)' : undefined }} onClick={() => p.selectVersion(candidate.id)}>
                 <Chip $tone={candidate.id === invoice.currentVersionId ? 'acc' : 'neutral'}>{candidate.id === invoice.currentVersionId ? 'Current' : 'Superseded'}</Chip>
                 <div style={{ minWidth: 0, flex: 1 }}><div style={{ fontWeight: 600 }}>Version {i + 1}</div><Hint>{shortDate(candidate.issuedAt.slice(0, 10))} · {formatMoney(calculateInvoice(candidate.content).total, candidate.content.currency)}{candidate.changeNote ? ` · ${candidate.changeNote}` : ''}</Hint></div>
                 <Btn $quiet $sm disabled={disabled} onClick={event => { event.stopPropagation(); void p.download({ kind: 'downloadVersion', versionId: candidate.id }) }}>PDF</Btn>
