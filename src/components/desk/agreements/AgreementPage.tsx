@@ -66,7 +66,7 @@ export function AgreementPage({ product: p, store, agreement: a, disabled }: { p
           </> : <Btn $sm disabled={disabled} onClick={() => p.act(() => invoiceCommands.reopenAgreement({ agreementId: a.id }), 'Active again.')}>Reopen</Btn>}
         </>}
       </TopBar>
-      <Body style={{ gap: 0 }} {...agentRefs(`${a.numberText ?? 'Draft'} · ${a.title}`, agreementRefs(a.id))}>
+      <Body style={{ gap: 0 }} {...agentRefs(`${a.numberText ?? 'Draft'} · ${a.title}`, agreementRefs(a.id), '@open')}>
         <Outline aria-label="Sections">
           <Kicker style={{ padding: '0 8px 6px' }}>Sections</Kicker>
           {a.sections.map(section => {

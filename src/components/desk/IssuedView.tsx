@@ -48,7 +48,7 @@ export function IssuedView({ product: p, store, disabled }: { product: InvoicePr
         {p.availability?.available ? <Btn disabled={disabled} onClick={p.openPdf} title="Opens the retained PDF in its own window; nothing is exported"><Icon.file />Open PDF</Btn> : null}
         <Btn $acc disabled={disabled} onClick={() => p.download({ kind: 'downloadVersion', versionId: version.id })}><Icon.download />{superseded ? 'Download superseded PDF' : 'Download PDF'}</Btn>
       </TopBar>
-      <Body {...agentRefs(label, invoiceRefs(invoice.id))}>
+      <Body {...agentRefs(label, invoiceRefs(invoice.id), '@open')}>
         <Main>
           {marking ? (
             <Callout style={{ alignItems: 'center', gap: 10 }}>
