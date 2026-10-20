@@ -250,7 +250,7 @@
         },
         {
           "name": "setNextInvoiceNumber",
-          "description": "Establish the verified next whole-number identifier or move the existing sequence forward. Rejects conflicts and backward movement into reserved sequence positions. Returns the effective next number and any resulting gap. Cannot detect conflicts with invoices not registered in this app.",
+          "description": "Establish the verified next whole-number identifier or move the existing sequence forward. Rejects conflicts and backward movement into reserved sequence positions. Returns the effective next number, a sequence summary (reserved numbers counted, not listed) and any resulting gap. Cannot detect conflicts with invoices not registered in this app.",
           "inputSchema": {
             "type": "object",
             "properties": {
@@ -274,7 +274,7 @@
         },
         {
           "name": "createInvoiceDraft",
-          "description": "Create and save a blank draft using current business and template defaults, or a separate draft copied from a prior invoice. Copying uses its current issued version unless a retained source version is specified, links the source, copies editable content and appearance, resets invoice date to local today, clears due date and reference, and never copies its number. Returns the draft ID, saved contents, calculated totals, and provisional next number.",
+          "description": "Create and save a blank draft using current business and template defaults, or a separate draft copied from a prior invoice. Copying uses its current issued version unless a retained source version is specified, links the source, copies editable content and appearance, resets invoice date to local today, clears due date and reference, and never copies its number. Returns a summary: the draft id and revision, provisional label, recipient, dates, currency, line count, totals and diagnostics (not the content; call getInvoice for the lines).",
           "inputSchema": {
             "type": "object",
             "properties": {
@@ -297,7 +297,7 @@
         },
         {
           "name": "updateInvoiceDraft",
-          "description": "Save supplied content fields of an ordinary draft or unpublished correction without modifying issued versions. Omitted fields are preserved; empty strings or null dates clear values. A supplied lineItems array replaces the complete ordered list. Incomplete work is permitted, and the result includes saved state, authoritative recalculated totals, field diagnostics, and a price-review warning if currency changes. Currency changes never convert prices.",
+          "description": "Save supplied content fields of an ordinary draft or unpublished correction without modifying issued versions. Omitted fields are preserved; empty strings or null dates clear values. A supplied lineItems array replaces the complete ordered list. Incomplete work is permitted. Replies with a summary: revision, saved state, line count, authoritative recalculated totals, field diagnostics, and a price-review warning if currency changes (not the content; call getInvoice for the lines). Currency changes never convert prices.",
           "inputSchema": {
             "type": "object",
             "properties": {
@@ -445,7 +445,7 @@
         },
         {
           "name": "applyDefaultsToDraft",
-          "description": "Explicitly copy selected current defaults into a draft or correction. Business identity replaces sender details, payment defaults replace payment instructions, template replaces appearance, and client copies directory details into the recipient snapshot and records the directory association. Only selected sections change; returns a before-and-after summary.",
+          "description": "Explicitly copy selected current defaults into a draft or correction. Business identity replaces sender details, payment defaults replace payment instructions, template replaces appearance, and client copies directory details into the recipient snapshot and records the directory association. Only selected sections change; returns the draft summary and each changed field with its before and after value (long text clipped).",
           "inputSchema": {
             "type": "object",
             "properties": {
@@ -653,7 +653,7 @@
         },
         {
           "name": "getInvoicePreview",
-          "description": "Read a paginated in-app preview of a saved draft, correction, or retained issued version, using the PDF layout engine. Returns page count, requested page renderings and text, totals, content and printable-area diagnostics, and provisional or permanent number status outside the document. Does not finalize or export a PDF. Without pageNumbers, returns all pages.",
+          "description": "Read a paginated in-app preview of a saved draft, correction, or retained issued version, using the PDF layout engine. Returns page count, requested page renderings and text, totals, content and printable-area diagnostics, and provisional or permanent number status outside the document. Does not finalize or export a PDF. Without pageNumbers, returns all pages. includeImages: false leaves out the page images.",
           "inputSchema": {
             "type": "object",
             "properties": {
@@ -697,6 +697,10 @@
                 },
                 "minItems": 1,
                 "uniqueItems": true
+              },
+              "includeImages": {
+                "type": "boolean",
+                "description": "false leaves out the page images (base64); page text, diagnostics and image paths stay. Default true."
               }
             },
             "required": [
@@ -709,7 +713,7 @@
         },
         {
           "name": "startInvoiceCorrection",
-          "description": "Open and save an unpublished same-number correction based on the latest issued version, preserving its content and appearance. Leaves the issued PDF accessible. If a correction already exists, returns that correction without replacing it. Does not reserve or assign another number.",
+          "description": "Open and save an unpublished same-number correction based on the latest issued version, preserving its content and appearance. Leaves the issued PDF accessible. If a correction already exists, returns that correction without replacing it. Does not reserve or assign another number. Returns a summary of the correction draft (id, label, totals, diagnostics); call getInvoice for its content.",
           "inputSchema": {
             "type": "object",
             "properties": {
@@ -726,7 +730,7 @@
         },
         {
           "name": "prepareInvoiceFinalization",
-          "description": "Validate saved invoice content and all preview pages and prepare a read-only confirmation for ordinary issue-and-export, same-number correction-and-export, or historical registration. Returns blocking errors or an expiring confirmation token bound to the draft revision, settings, proposed number, totals, action, and supplied registration details or change note. Includes recipient, dates, currency, total, PDF preview, correction differences, historical labels, and sequence impact. Does not assign or reserve a number, publish changes, or export files.",
+          "description": "Validate saved invoice content and all preview pages and prepare a read-only confirmation for ordinary issue-and-export, same-number correction-and-export, or historical registration. Returns blocking errors or an expiring confirmation token bound to the draft revision, settings, proposed number, totals, action, and supplied registration details or change note. Includes recipient, dates, currency, totals, a preview summary (page count, page problems, whether the PDF is retained; call getInvoicePreview for page images and text), correction differences, historical labels, and sequence impact. Does not assign or reserve a number, publish changes, or export files.",
           "inputSchema": {
             "type": "object",
             "properties": {
@@ -1007,7 +1011,7 @@
         },
         {
           "name": "addInvoiceNote",
-          "description": "Add a working note to an issued invoice, such as a follow-up to do ('Send the corrected PDF to Book Sprints'). Notes are never printed and show in the invoice list until ticked off. Find the invoice with searchInvoices first.",
+          "description": "Add a working note to an issued invoice, such as a follow-up to do ('Send the corrected PDF to Book Sprints'). Notes are never printed and show in the invoice list until ticked off. Find the invoice with searchInvoices first. Replies with the new note and the invoice's note counts.",
           "inputSchema": {
             "type": "object",
             "properties": {
@@ -1029,7 +1033,7 @@
         },
         {
           "name": "updateInvoiceNote",
-          "description": "Tick an invoice note done (done: true), reopen it (done: false), change its text, or remove it. Read the note ids with getInvoice first.",
+          "description": "Tick an invoice note done (done: true), reopen it (done: false), change its text, or remove it. Read the note ids with getInvoice first. Replies with the changed note (or removed) and the note counts.",
           "inputSchema": {
             "type": "object",
             "properties": {
@@ -1060,7 +1064,7 @@
         },
         {
           "name": "linkDocument",
-          "description": "Link a contract, statement of work, purchase order or other file to a client (clientId), an issued invoice (invoiceId), an agreement (agreementId) or a contractor (contractorId). The file is linked by path, never copied; linking the same path again updates its kind or name. An invoice also shows its client's documents, so link agreements that cover several invoices to the client.",
+          "description": "Link a contract, statement of work, purchase order or other file to a client (clientId), an issued invoice (invoiceId), an agreement (agreementId) or a contractor (contractorId). The file is linked by path, never copied; linking the same path again updates its kind or name. An invoice also shows its client's documents, so link agreements that cover several invoices to the client. Replies with the linked document and the owner's document count.",
           "inputSchema": {
             "type": "object",
             "properties": {
@@ -1107,7 +1111,7 @@
         },
         {
           "name": "unlinkDocument",
-          "description": "Remove a document link from a client, invoice, agreement or contractor; the file itself is untouched. Read document ids with getInvoice or searchClients first.",
+          "description": "Remove a document link from a client, invoice, agreement or contractor; the file itself is untouched. Read document ids with getInvoice or searchClients first. Replies with the removed id and the remaining document count.",
           "inputSchema": {
             "type": "object",
             "properties": {
@@ -1311,7 +1315,7 @@
         },
         {
           "name": "createAgreement",
-          "description": "Start an agreement as a draft. A skeleton has headings and bracketed prompts only; the person's wording or saved template fills them. Copy keeps another agreement's structure but empties scope, dates and fee. Use searchClients or searchContractors (saveContractor to add one) for the party id first.",
+          "description": "Start an agreement as a draft. A skeleton has headings and bracketed prompts only; the person's wording or saved template fills them. Copy keeps another agreement's structure but empties scope, dates and fee. Use searchClients or searchContractors (saveContractor to add one) for the party id first. Replies with a summary (id, number, status, party, fee, section/milestone/bill counts, checks, billing totals), plus the section outline (ids and headings), not the wording; call getAgreement for the full agreement.",
           "inputSchema": {
             "type": "object",
             "properties": {
@@ -1399,7 +1403,7 @@
         },
         {
           "name": "updateAgreement",
-          "description": "Change a draft's title, dates, fee, payment days, sections or milestones. Once sent, text and terms are fixed (withdraw it to a draft if unsigned, or start a change order). A registered agreement's terms stay editable as a record.",
+          "description": "Change a draft's title, dates, fee, payment days, sections or milestones. Once sent, text and terms are fixed (withdraw it to a draft if unsigned, or start a change order). A registered agreement's terms stay editable as a record. Replies with a summary (id, number, status, party, fee, section/milestone/bill counts, checks, billing totals), plus the section outline (ids and headings), not the wording; call getAgreement for the full agreement.",
           "inputSchema": {
             "type": "object",
             "properties": {
@@ -1538,7 +1542,7 @@
         },
         {
           "name": "editAgreementSection",
-          "description": "Write, change, add or remove one section of a draft agreement. Draft only what the person asked for, from their documents; never invent fees, dates or names: leave [placeholders].",
+          "description": "Write, change, add or remove one section of a draft agreement. Draft only what the person asked for, from their documents; never invent fees, dates or names: leave [placeholders]. Replies with the section id, heading and length, and a summary (id, number, status, party, fee, section/milestone/bill counts, checks, billing totals), not the wording; call getAgreement for the full agreement.",
           "inputSchema": {
             "type": "object",
             "properties": {
@@ -1573,7 +1577,7 @@
         },
         {
           "name": "sendAgreement",
-          "description": "Mark a draft as sent for signature and give it its number (e.g. PS-SOW-2026-03). Refused while checks block (placeholders, fee and milestones not adding up, no party). Sending the PDF itself is the person's step (exportAgreementPdf).",
+          "description": "Mark a draft as sent for signature and give it its number (e.g. PS-SOW-2026-03). Refused while checks block (placeholders, fee and milestones not adding up, no party). Sending the PDF itself is the person's step (exportAgreementPdf). Replies with a summary (id, number, status, party, fee, section/milestone/bill counts, checks, billing totals), not the wording; call getAgreement for the full agreement.",
           "inputSchema": {
             "type": "object",
             "properties": {
@@ -1591,7 +1595,7 @@
         },
         {
           "name": "withdrawAgreement",
-          "description": "Take an agreement that was sent but not signed back to a draft for changes; it keeps its number.",
+          "description": "Take an agreement that was sent but not signed back to a draft for changes; it keeps its number. Replies with a summary (id, number, status, party, fee, section/milestone/bill counts, checks, billing totals), not the wording; call getAgreement for the full agreement.",
           "inputSchema": {
             "type": "object",
             "properties": {
@@ -1609,7 +1613,7 @@
         },
         {
           "name": "markAgreementSigned",
-          "description": "Record that both sides signed. Milestones due on signature become due. The agreement becomes active.",
+          "description": "Record that both sides signed. Milestones due on signature become due. The agreement becomes active. Replies with a summary (id, number, status, party, fee, section/milestone/bill counts, checks, billing totals), not the wording; call getAgreement for the full agreement.",
           "inputSchema": {
             "type": "object",
             "properties": {
@@ -1667,7 +1671,7 @@
         },
         {
           "name": "closeAgreement",
-          "description": "Mark an active agreement complete (work done) or ended (stopped early).",
+          "description": "Mark an active agreement complete (work done) or ended (stopped early). Replies with a summary (id, number, status, party, fee, section/milestone/bill counts, checks, billing totals), not the wording; call getAgreement for the full agreement.",
           "inputSchema": {
             "type": "object",
             "properties": {
@@ -1693,7 +1697,7 @@
         },
         {
           "name": "reopenAgreement",
-          "description": "Make a completed or ended agreement active again.",
+          "description": "Make a completed or ended agreement active again. Replies with a summary (id, number, status, party, fee, section/milestone/bill counts, checks, billing totals), not the wording; call getAgreement for the full agreement.",
           "inputSchema": {
             "type": "object",
             "properties": {
@@ -1711,7 +1715,7 @@
         },
         {
           "name": "setMilestoneDone",
-          "description": "Mark a milestone of a signed agreement done (or accepted) so it can be invoiced, or undo that before it is invoiced.",
+          "description": "Mark a milestone of a signed agreement done (or accepted) so it can be invoiced, or undo that before it is invoiced. Replies with the milestone and a summary (id, number, status, party, fee, section/milestone/bill counts, checks, billing totals), not the wording; call getAgreement for the full agreement.",
           "inputSchema": {
             "type": "object",
             "properties": {
@@ -1737,7 +1741,7 @@
         },
         {
           "name": "invoiceAgreementMilestone",
-          "description": "Make the invoice draft for a due milestone of a signed client agreement: the client, currency, payment days, one line for the milestone and a reference to the agreement. Returns draftId; the draft is checked and issued like any invoice.",
+          "description": "Make the invoice draft for a due milestone of a signed client agreement: the client, currency, payment days, one line for the milestone and a reference to the agreement. Returns draftId, the milestone and an agreement summary; the draft is checked and issued like any invoice.",
           "inputSchema": {
             "type": "object",
             "properties": {
@@ -1759,7 +1763,7 @@
         },
         {
           "name": "invoiceAgreementMonth",
-          "description": "Make the invoice draft for one month of an active monthly retainer; each month once. getAgreement lists unbilled months.",
+          "description": "Make the invoice draft for one month of an active monthly retainer; each month once. getAgreement lists unbilled months. Returns draftId, the month's milestone and an agreement summary.",
           "inputSchema": {
             "type": "object",
             "properties": {
@@ -1782,7 +1786,7 @@
         },
         {
           "name": "linkInvoiceToAgreement",
-          "description": "Count an existing invoice (issued or draft) as billed against a client agreement, e.g. invoices issued before the agreement was recorded here.",
+          "description": "Count an existing invoice (issued or draft) as billed against a client agreement, e.g. invoices issued before the agreement was recorded here. Replies with a summary (id, number, status, party, fee, section/milestone/bill counts, checks, billing totals), not the wording; call getAgreement for the full agreement.",
           "inputSchema": {
             "type": "object",
             "properties": {
@@ -1808,7 +1812,7 @@
         },
         {
           "name": "addContractorBill",
-          "description": "Record an invoice a contractor sent against their signed agreement. It is checked against the hourly rate and the monthly cap.",
+          "description": "Record an invoice a contractor sent against their signed agreement. It is checked against the hourly rate and the monthly cap. Replies with the billId, the bill with its check, and a summary (id, number, status, party, fee, section/milestone/bill counts, checks, billing totals), not the wording; call getAgreement for the full agreement.",
           "inputSchema": {
             "type": "object",
             "properties": {
@@ -1851,7 +1855,7 @@
         },
         {
           "name": "updateContractorBill",
-          "description": "Mark a contractor bill paid, approve it over the cap, or remove it.",
+          "description": "Mark a contractor bill paid, approve it over the cap, or remove it. Replies with the bill with its check (or removed) and a summary (id, number, status, party, fee, section/milestone/bill counts, checks, billing totals), not the wording; call getAgreement for the full agreement.",
           "inputSchema": {
             "type": "object",
             "properties": {
@@ -1993,7 +1997,7 @@
         },
         {
           "name": "saveAgreementTemplate",
-          "description": "Create or replace a template as a whole. It saves with problems (returned in problems) but cannot be used until every {{key}} in the wording is a field, fee amounts come from asked fields, and milestone shares add up to 100. The wording is the person's: never add legal terms of your own.",
+          "description": "Create or replace a template as a whole. It saves with problems (returned in problems) but cannot be used until every {{key}} in the wording is a field, fee amounts come from asked fields, and milestone shares add up to 100. The wording is the person's: never add legal terms of your own. Replies with a summary (id, name, kind, field keys, section count, problems), not the wording; call getAgreementTemplate for the full template.",
           "inputSchema": {
             "type": "object",
             "properties": {
@@ -2199,7 +2203,7 @@
         },
         {
           "name": "editTemplateSection",
-          "description": "Write, change, add or remove one section of a template. Use {{key}} for existing fields and [bracketed prompts] for what is written each time.",
+          "description": "Write, change, add or remove one section of a template. Use {{key}} for existing fields and [bracketed prompts] for what is written each time. Replies with the section index, heading and length, and a summary (id, name, kind, field keys, section count, problems), not the wording; call getAgreementTemplate for the full template.",
           "inputSchema": {
             "type": "object",
             "properties": {
@@ -2274,7 +2278,7 @@
         },
         {
           "name": "makeTemplateFromAgreement",
-          "description": "Make a template from a finished agreement, replacing each chosen specific with a field or a [prompt]. Milestones become shares of the fee. The agreement is not changed.",
+          "description": "Make a template from a finished agreement, replacing each chosen specific with a field or a [prompt]. Milestones become shares of the fee. The agreement is not changed. Replies with a summary (id, name, kind, field keys, section count, problems), not the wording; call getAgreementTemplate for the full template.",
           "inputSchema": {
             "type": "object",
             "properties": {
@@ -2364,7 +2368,7 @@
         },
         {
           "name": "createOutlineTemplate",
-          "description": "Start a template from the built-in headings (prompts only) to be written in the person's wording, e.g. from a document they point to (then editTemplateSection).",
+          "description": "Start a template from the built-in headings (prompts only) to be written in the person's wording, e.g. from a document they point to (then editTemplateSection). Replies with a summary (id, name, kind, field keys, section count, problems), plus the section headings by index, not the wording; call getAgreementTemplate for the full template.",
           "inputSchema": {
             "type": "object",
             "properties": {
@@ -2432,7 +2436,7 @@
         },
         {
           "name": "createAgreementFromTemplate",
-          "description": "Generate a draft agreement from a template for a client or contractor. Unanswered fields become [placeholders], so the draft cannot be sent until they are written.",
+          "description": "Generate a draft agreement from a template for a client or contractor. Unanswered fields become [placeholders], so the draft cannot be sent until they are written. Replies with a summary (id, number, status, party, fee, section/milestone/bill counts, checks, billing totals), plus the section outline (ids and headings), not the wording; call getAgreement for the full agreement.",
           "inputSchema": {
             "type": "object",
             "properties": {
@@ -2482,7 +2486,7 @@
         },
         {
           "name": "addAgreementNote",
-          "description": "Add a working note to an agreement (never printed), e.g. a follow-up.",
+          "description": "Add a working note to an agreement (never printed), e.g. a follow-up. Replies with the new note and the note counts.",
           "inputSchema": {
             "type": "object",
             "properties": {
@@ -2504,7 +2508,7 @@
         },
         {
           "name": "updateAgreementNote",
-          "description": "Tick an agreement note done, reopen, change or remove it.",
+          "description": "Tick an agreement note done, reopen, change or remove it. Replies with the changed note (or removed) and the note counts.",
           "inputSchema": {
             "type": "object",
             "properties": {

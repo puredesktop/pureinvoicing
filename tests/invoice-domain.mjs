@@ -452,5 +452,38 @@ try {
     assert.equal(Object.keys(s.library).length, 1)
     assert.throws(() => lib.getLibraryDocument(s, 'd1'), /not found/)
   }
+  // Lean agent replies: a change says what changed, never the whole invoice, agreement or template.
+  {
+    const r = await import(pathToFileURL(join(temporary, 'src/agents/replies.js')).href)
+    const ag = await load('agreements'), tp = await load('templates'), up = await load('updates'), { emptyStore: fresh } = await load('defaults')
+    const size = value => JSON.stringify(value, null, 2).length
+    const lines = n => Array.from({ length: n }, (_, i) => ({ description: `Workshop day ${i + 1}: facilitation, preparation and a written summary for the team`, quantity: 1, unitPrice: 1200, taxPercent: 10 }))
+    let s = up.createDraft(fresh(), undefined, undefined, 'big', '2026-09-19T10:00:00Z', '2026-09-19')
+    s = up.updateDraft(s, 'big', { recipient: { name: 'Client', address: 'Road' }, invoiceDate: '2026-09-19', dueDate: '2026-09-30', lineItems: lines(40) })
+    const full = { ...invoiceDetails(s, 'big'), saveStatus: 'saved' }, lean = r.draftReply(full)
+    assert.equal(lean.id, 'big'); assert.equal(lean.lineCount, 40); assert.equal(lean.totals.total, full.calculation.total); assert.equal(lean.dueDate, '2026-09-30')
+    assert.equal(lean.content, undefined); assert.equal(lean.revision, full.revision)
+    const s2 = up.updateDraft(s, 'big', { lineItems: lines(80) })
+    assert.ok(size(r.draftReply({ ...invoiceDetails(s2, 'big'), saveStatus: 'saved' })) < size(lean) + 20, 'the draft reply does not grow with the lines')
+    const changes = r.contentChanges(full.content, { ...full.content, recipient: { ...full.content.recipient, name: 'Other' } })
+    assert.deepEqual(changes, [{ field: 'recipient.name', before: 'Client', after: 'Other' }])
+    const prepared = r.agentReplies.prepareInvoiceFinalization({ ready: true, confirmationToken: 't', numberText: 'PS-1', calculation: full.calculation, total: full.calculation.total,
+      preview: { pageCount: 2, canFinalize: true, document: { id: 'doc', pdfAssetId: 'pdf' }, pages: [1, 2].map(n => ({ pageNumber: n, text: 'x'.repeat(4000), imageDataUrl: `data:image/png;base64,${'A'.repeat(200000)}`, diagnostics: [] })) } }, {})
+    assert.equal(prepared.confirmationToken, 't'); assert.equal(prepared.preview.pageCount, 2); assert.equal(prepared.preview.pdfRetained, true); assert.ok(size(prepared) < 2000)
+    const noImages = r.agentReplies.getInvoicePreview({ pages: [{ pageNumber: 1, text: 'a', imageDataUrl: 'data:', imagePath: '/p.png', diagnostics: [] }] }, { includeImages: false })
+    assert.deepEqual(noImages.pages, [{ pageNumber: 1, text: 'a', imagePath: '/p.png', diagnostics: [] }])
+    s = up.saveClient(s, { name: 'Example Training, Inc.', billingAddress: 'NY' }, 'amp')
+    s = ag.createAgreement(s, { kind: 'sow', direction: 'client', clientId: 'amp' }, 'sow', '2026-09-01T10:00:00Z')
+    s = ag.updateAgreement(s, 'sow', { sections: s.agreements.sow.sections.map(x => ({ ...x, body: 'The work is described here in full. '.repeat(60) })) })
+    const a = s.agreements.sow, details = { ...a, party: ag.partyName(s, a), checks: ag.agreementChecks(s, a), billing: ag.agreementBilling(s, a), unbilledPeriods: [], bills: [], saveStatus: 'saved' }
+    const section = ag.editSection(s, 'sow', { sectionId: a.sections[0].id, body: 'Changed.' })
+    const edited = r.agentReplies.editAgreementSection({ ...details, sectionId: section.sectionId }, { sectionId: section.sectionId })
+    assert.equal(edited.id, 'sow'); assert.equal(edited.sectionId, a.sections[0].id); assert.equal(edited.sectionCount, a.sections.length); assert.equal(edited.sections, undefined)
+    assert.ok(size(edited) < size(details) / 4)
+    s = tp.saveTemplate(s, tp.outlineTemplate('sow', 'client', 'Workshops'), 'tpl')
+    const template = r.templateReply({ ...s.templates.tpl, saveStatus: 'saved' })
+    assert.equal(template.id, 'tpl'); assert.equal(template.sectionCount, s.templates.tpl.sections.length); assert.ok(Array.isArray(template.problems)); assert.equal(template.sections, undefined)
+    console.log(`Lean replies (chars, pretty JSON): draft 40 lines ${size(full)} → ${size(lean)}; agreement ${size(details)} → ${size(edited)}; template ${size(s.templates.tpl)} → ${size(template)}; prepare with 2 page images → ${size(prepared)}`)
+  }
   console.log('Invoice domain: rounding, schemas, snapshots, defaults, archive, sequence, guarded conflicts, recovery, reload and the library passed.')
 } finally { await rm(temporary, { recursive: true, force: true }) }

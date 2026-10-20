@@ -72,7 +72,16 @@ series and tax filing are outside this app.
 4. `searchClients` before creating or copying a client.
 5. `getInvoicePreview` when presentation matters: page count, page
    renderings and text, diagnostics. Do not claim a visual review from
-   diagnostics alone.
+   diagnostics alone. `includeImages: false` leaves the page images out
+   when only the text and diagnostics matter.
+
+Changes reply with what changed, never the whole record: a draft change
+gives the id, revision, label, recipient, dates, line count, totals and
+diagnostics; an agreement change gives its number, status, counts, checks
+and billing totals; a template change gives its fields, section count and
+problems; `prepareInvoiceFinalization` gives a preview summary, not the
+page images. Read the full content with `getInvoice`, `getAgreement`,
+`getAgreementTemplate` or `getInvoicePreview` when you need it.
 
 ## Write safety
 

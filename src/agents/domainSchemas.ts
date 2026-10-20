@@ -604,6 +604,10 @@ export const domainSchemas = {
         },
         "minItems": 1,
         "uniqueItems": true
+      },
+      "includeImages": {
+        "type": "boolean",
+        "description": "false leaves out the page images (base64); page text, diagnostics and image paths stay. Default true."
       }
     },
     "required": [
