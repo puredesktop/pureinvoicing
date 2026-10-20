@@ -7,6 +7,7 @@ import { invoiceCommands } from '../../../lib/invoices/workspace'
 import type { AgreementDirection, AgreementKind, AgreementTemplate, InvoiceStore, TemplateField, TemplateFieldSource } from '../../../lib/invoices/types'
 import { Icon, scrollWithin } from '../bits'
 import { Body, Btn, Chip, Field, Input, Kicker, Meta, Mono, Panel, Sec, SecHead, Select, TopBar } from '../deskStyles'
+import { agentRefs, templateRefs, templateSectionRefs } from '../../../lib/agentRefs'
 
 const TONE: Record<AgreementDirection, { bg: string; ink: string }> = { client: { bg: 'var(--d-info-bg)', ink: 'var(--d-info-ink)' }, contractor: { bg: 'color-mix(in srgb, #4B5A9E 14%, transparent)', ink: '#4B5A9E' } }
 
@@ -44,7 +45,7 @@ export function TemplatesLibrary({ product: p, store, disabled, onUse, onEdit, o
               {mine.map(t => {
                 const counts = templateCounts(t), problems = templateProblems(t)
                 return (
-                  <Card key={t.id}>
+                  <Card key={t.id} {...agentRefs(t.name, templateRefs(t.id))}>
                     <div className="tags"><span className="tag" style={{ background: TONE[direction].bg, color: TONE[direction].ink }}>{KIND_LABEL[t.kind]}</span>{t.isDefault ? <Chip $tone="ok">Default</Chip> : null}{problems.length ? <Chip $tone="warn">Needs attention</Chip> : null}</div>
                     <div><div className="name">{t.name}</div><Meta>{t.description || t.origin || 'Your wording'}</Meta></div>
                     <dl>
@@ -115,7 +116,7 @@ export function TemplateEditor({ product: p, store, template: t, disabled, onBac
         </label>
         <Btn $acc disabled={disabled || problems.length > 0} title={problems.join('\n') || undefined} onClick={() => onUse(t)}>Use this template</Btn>
       </TopBar>
-      <Body style={{ gap: 0 }}>
+      <Body style={{ gap: 0 }} {...agentRefs(t.name, templateRefs(t.id))}>
         <Outline aria-label="Sections">
           <Kicker style={{ padding: '0 8px 6px' }}>Sections</Kicker>
           {t.sections.map((s, i) => <a key={i} href={`#tsection-${i}`} onClick={event => { event.preventDefault(); scrollWithin(document.getElementById(`tsection-${i}`)) }}><Mono className="n">{i + 1}</Mono><span className="name">{s.heading || 'Untitled'}</span></a>)}
@@ -129,7 +130,7 @@ export function TemplateEditor({ product: p, store, template: t, disabled, onBac
               : <button type="button" className="title editable" onClick={() => setEditing('title')} disabled={disabled}><Rich text={t.title} fieldOf={fieldOf} /></button>}
             {preview ? <Meta>Filled for {(() => { const text = `${parties.find(x => x.id === previewParty)?.name ?? ''}${parent ? `, under ${parent.title}` : ''}`; return text.endsWith('.') ? text : `${text}.` })()} {preview.missing.length ? `Not filled: ${preview.missing.join(', ')}.` : ''} {preview.prompts ? `${preview.prompts} prompt${preview.prompts === 1 ? '' : 's'} left to write.` : ''}</Meta> : null}
             {t.sections.map((s, i) => (
-              <section key={i} id={`tsection-${i}`} className={editing === i ? 'editing' : undefined}>
+              <section key={i} {...agentRefs(s.heading || 'Untitled', templateSectionRefs(i))} id={`tsection-${i}`} className={editing === i ? 'editing' : undefined}>
                 {editing === i && !preview ? (
                   <SectionEditor section={s} fields={t.fields} onCancel={() => setEditing(null)} onDone={next => { setEditing(null); if (next.heading !== s.heading || next.body !== s.body) void save({ sections: t.sections.map((x, j) => j === i ? next : x) }) }}
                     onRemove={() => { setEditing(null); void save({ sections: t.sections.filter((_, j) => j !== i) }, 'Section removed.') }} />

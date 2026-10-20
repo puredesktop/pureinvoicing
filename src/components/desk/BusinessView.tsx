@@ -8,6 +8,7 @@ import { AppearanceControls } from './AppearanceControls'
 import { PreviewPane } from './PreviewPane'
 import { ImportSheet } from './ImportSheet'
 import { Icon } from './bits'
+import { agentRefs } from '../../lib/agentRefs'
 import { Desk, Area, Btn, Callout, Chip, Field, Grid, Hint, Input, Mono, Row, Sec, SecHead, Select, Switch } from './deskStyles'
 
 
@@ -62,7 +63,7 @@ export function BusinessView({ setup: s, product: p, store, disabled }: { setup:
           <SecHead><h3>Terms</h3><span className="sp" /><Btn $acc $sm disabled={disabled || !s.dirtyBusiness} onClick={s.saveBusiness}>Save</Btn></SecHead>
           <Grid><Field><span>Default terms for new drafts</span><Select value={s.business.defaultTermsDays ?? ''} onChange={event => s.editBusiness({ defaultTermsDays: event.target.value === '' ? undefined : Number(event.target.value) })}><option value="">None (type a due date each time)</option>{TERMS_PRESETS.map(preset => <option key={preset.days} value={preset.days}>{preset.label}</option>)}</Select></Field><div><Hint>A client's own terms win over this. Overdue starts the day after the due date and shows in the archive and on the client.</Hint></div></Grid>
         </Sec>
-        <Sec id="business-template">
+        <Sec id="business-template" {...agentRefs('Default template', ['defaultTemplate', 'kind:defaultTemplate'])}>
           <SecHead><h3>Letterhead and template</h3><span className="sp" /><Btn $acc $sm disabled={disabled || !s.dirtyTemplate || s.diagnostics.length > 0} onClick={s.saveTemplate}>Save template</Btn></SecHead>
           <AppearanceControls presentation={s.template} store={store} diagnostics={s.diagnostics} disabled={disabled} onChange={s.editTemplate} onImportLogo={s.importLogo} />
         </Sec>

@@ -11,6 +11,7 @@ import { Avatar, Body, Btn, Card, Chip, Dot, Hint, Kicker, List, Main, Meta, Mon
 import { Icon, StandingChip, hueOf, initials, shortDate, whenWords } from './bits'
 import { FirstUse } from './FirstUse'
 import { ImportSheet } from './ImportSheet'
+import { agentRefs, clientRefs, invoiceRefs } from '../../lib/agentRefs'
 
 type Place = 'all' | 'overdue' | 'open' | 'draft'
 const PLACES: Array<{ id: Place; label: string; color?: string }> = [
@@ -55,7 +56,7 @@ export function ArchiveView({ product: p, setup: s, store, disabled }: { product
         })}
         {stats.clients.length ? <Kicker style={{ padding: '12px 8px 4px' }}>Clients</Kicker> : null}
         {stats.clients.slice(0, 8).map(client => (
-          <RailRow key={client.key} $on={!!client.clientId && q.clientId === client.clientId} disabled={!client.clientId} title={client.clientId ? undefined : 'Typed on the invoice, not in the directory'} onClick={() => client.clientId && filter({ clientId: q.clientId === client.clientId ? undefined : client.clientId, status: 'all' })}>
+          <RailRow key={client.key} {...agentRefs(client.name || 'Unnamed client', clientRefs(client.clientId))} $on={!!client.clientId && q.clientId === client.clientId} disabled={!client.clientId} title={client.clientId ? undefined : 'Typed on the invoice, not in the directory'} onClick={() => client.clientId && filter({ clientId: q.clientId === client.clientId ? undefined : client.clientId, status: 'all' })}>
             <Avatar $hue={hueOf(client.name)} $size={18}>{initials(client.name)}</Avatar><span className="name">{client.name || 'Unnamed client'}</span><small>{client.count}</small>
           </RailRow>
         ))}
@@ -106,7 +107,7 @@ export function ArchiveView({ product: p, setup: s, store, disabled }: { product
                   {p.archive.items.map(row => {
                     const draft = row.status === 'draft'
                     return (
-                      <tr key={row.id} aria-selected={p.selectedId === row.id} onClick={() => p.openInvoice(row.id, list.current?.scrollTop ?? 0)}>
+                      <tr key={row.id} {...agentRefs(`${(draft ? row.provisionalNumberText : row.numberText) ?? 'Invoice'} · ${row.recipient.name || 'Unnamed client'}`, invoiceRefs(row.id, row.correctionId))} aria-selected={p.selectedId === row.id} onClick={() => p.openInvoice(row.id, list.current?.scrollTop ?? 0)}>
                         <td><Mono style={{ color: draft ? 'var(--d-muted)' : undefined, whiteSpace: 'nowrap' }}>{draft ? row.provisionalNumberText : row.numberText}</Mono>{draft ? <Hint style={{ display: 'block' }}>provisional</Hint> : row.historical ? <Hint style={{ display: 'block' }}>registered</Hint> : row.correctionId ? <Hint style={{ display: 'block' }}>correction in progress</Hint> : null}</td>
                         <td><div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}><Avatar $hue={hueOf(row.recipient.name)}>{initials(row.recipient.name || '?')}</Avatar><div style={{ minWidth: 0 }}><div style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.recipient.name || 'Unnamed client'}</div>{row.reference ? <Hint style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.reference}</Hint> : null}{row.notes.length ? <button type="button" className="note-line" title={row.notes.map(n => n.text).join('\n')} onClick={event => { event.stopPropagation(); setNotesFor(row.id) }}><Icon.note /><span>{row.notes[0].text}</span>{row.notes.length > 1 ? <small>+{row.notes.length - 1}</small> : null}</button> : null}</div></div></td>
                         <td className="c-issued">{draft ? <Meta>—</Meta> : shortDate(row.invoiceDate)}</td>
