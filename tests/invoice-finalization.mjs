@@ -13,7 +13,7 @@ try {
   await writeFile(join(dir, 'package.json'), '{"type":"module"}')
   for (const file of ['lib/invoices/templatePreview', 'lib/invoices/finalization', 'lib/invoices/presentationCommands', 'lib/invoices/versionDocuments', 'lib/invoices/calculations',
     'lib/invoices/defaults', 'lib/invoices/parse', 'lib/invoices/repository', 'lib/invoices/updates', 'lib/invoices/commands', 'lib/invoices/queries',
-    'lib/invoices/lifecycle', 'lib/invoices/numbering', 'lib/invoices/money', 'lib/invoices/stats', 'bridge/invoiceStorageCapabilities']) {
+    'lib/invoices/lifecycle', 'lib/invoices/annotations', 'lib/invoices/templates', 'lib/invoices/agreements', 'lib/invoices/numbering', 'lib/invoices/money', 'lib/invoices/stats', 'bridge/invoiceStorageCapabilities']) {
     const source = await readFile(`src/${file}.ts`, 'utf8')
     const code = ts.transpileModule(source, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext } }).outputText
     await writeFile(join(dir, `src/${file}.js`), code.replace(/(from\s+['"])(\.[^'"]+)(['"])/g, '$1$2.js$3'))
@@ -25,9 +25,9 @@ try {
     await mkdir(join(dir, 'node_modules'), { recursive: true })
     await symlink(target, join(dir, 'node_modules', name), 'dir')
   }
-  for (const file of ['agents/handlers/index', 'agents/validateDomainArguments', 'agents/domainSchemas',
+  for (const file of ['agents/handlers/index', 'agents/replies', 'agents/validateDomainArguments', 'agents/domainSchemas',
     'components/desk/IssueSheet', 'components/desk/IssuedView', 'components/desk/PreviewPane', 'components/desk/bits', 'components/desk/deskStyles',
-    'lib/invoices/dates']) {
+    'lib/invoices/dates', 'components/desk/PaymentDialog', 'components/desk/Annotations']) {
     const extension = file.endsWith('deskStyles') || file.startsWith('agents') || file.startsWith('lib') ? 'ts' : 'tsx'
     const source = await readFile(`src/${file}.${extension}`, 'utf8')
     const code = ts.transpileModule(source, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext, jsx: ts.JsxEmit.ReactJSX } }).outputText
@@ -189,11 +189,12 @@ try {
     const bad = structuredClone(disk); mutate(bad); assert.throws(() => assertForwardTransition(disk, bad))
   }
   const copied = await callAgent('createInvoiceDraft', { sourceInvoiceId: invoiceId })
-  assert.equal(copied.content.dueDate, null)
-  await callAgent('updateInvoiceDraft', { draftId: copied.id, changes: { dueDate: copied.content.invoiceDate } })
+  assert.equal(copied.dueDate, null); assert.equal(copied.content, undefined) // A change replies with a summary, not the content.
+  await callAgent('updateInvoiceDraft', { draftId: copied.id, changes: { dueDate: copied.invoiceDate } })
   const agentPreview = await callAgent('getInvoicePreview', { target: { draftId: copied.id } })
   assert.equal(agentPreview.numberStatus, 'provisional')
   const agentPrepared = await callAgent('prepareInvoiceFinalization', { draftId: copied.id, action: { kind: 'issue' } })
+  assert.equal(agentPrepared.preview.pageCount, 2); assert.equal(agentPrepared.preview.pages, undefined)
   cancelled = true
   const agentIssued = await callAgent('finalizeInvoice', { confirmationToken: agentPrepared.confirmationToken })
   assert.equal(agentIssued.issued, true); assert.equal(agentIssued.pdf.cancelled, true)

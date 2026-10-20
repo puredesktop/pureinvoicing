@@ -6,12 +6,16 @@ import type { ImportSource } from '../../lib/invoices/importCommands'
 
 type ImportArgs = { source: ImportSource; skipConflicts?: boolean }
 import { validateDomainArguments } from '../validateDomainArguments'
+import { agentReplies } from '../replies'
 
 function domainTool<T>(name: string, command: (args: T) => Promise<unknown>): AgentToolHandler {
+  // Changes reply with what changed, not the whole document (see ../replies).
+  const reply = agentReplies[name]
   return async invoke => {
     try {
       validateDomainArguments(name, invoke.arguments)
-      return { content: formatAgentToolJson(await command(invoke.arguments as T)) }
+      const result = await command(invoke.arguments as T)
+      return { content: formatAgentToolJson(reply ? reply(result as Record<string, unknown>, (invoke.arguments ?? {}) as Record<string, unknown>) : result) }
     } catch (error) {
       console.error(`Invoice tool ${name} failed`, error)
       return agentToolErrorContent(error instanceof Error ? error.message : String(error))
