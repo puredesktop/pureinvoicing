@@ -116,7 +116,7 @@ export function TemplateEditor({ product: p, store, template: t, disabled, onBac
         </label>
         <Btn $acc disabled={disabled || problems.length > 0} title={problems.join('\n') || undefined} onClick={() => onUse(t)}>Use this template</Btn>
       </TopBar>
-      <Body style={{ gap: 0 }} {...agentRefs(t.name, templateRefs(t.id))}>
+      <Body style={{ gap: 0 }} {...agentRefs(t.name, templateRefs(t.id), '@open')}>
         <Outline aria-label="Sections">
           <Kicker style={{ padding: '0 8px 6px' }}>Sections</Kicker>
           {t.sections.map((s, i) => <a key={i} href={`#tsection-${i}`} onClick={event => { event.preventDefault(); scrollWithin(document.getElementById(`tsection-${i}`)) }}><Mono className="n">{i + 1}</Mono><span className="name">{s.heading || 'Untitled'}</span></a>)}
