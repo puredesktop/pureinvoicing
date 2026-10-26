@@ -23,7 +23,7 @@ An outgoing-invoice workspace for preparing drafts, issuing numbered invoice PDF
 
 **Mark as offered** records that the customer has the version and fixes its content. Changing it afterwards with **Revise offer** starts the next version; the offered one stays as it was. Record the answer with **Accepted** or **Declined** on the exact version. On the accepted version, **Create invoice draft** makes an ordinary invoice draft with the same customer, items, prices, currency and payment terms; it takes the next invoice number only when issued, and pressing it again opens the same draft. Proposals never use invoice numbers. Once a version is accepted the proposal is settled and opens on that version; a later draft is kept for the record only.
 
-Quantities and prices take a decimal point or a decimal comma (`19.95` or `19,95`; `1,250.50` or `1.250,50`). An amount that could be read two ways, such as `1,000`, is not saved: the form says so and asks for `1000` or `1.0000`.
+Quantities and prices take a decimal point or a decimal comma (`19.95` or `19,95`; `1,250.50` or `1.250,50`). An amount that could be read two ways, such as `1,000`, is not saved: the form says so and asks for `1000` or `1.0000`. Your other edits wait with it, also if you leave the proposal and come back, until it is corrected or you choose **Discard unsaved edits**.
 
 ## Development and loading
 

@@ -34,6 +34,15 @@ const fromForm = (f: Form): ProposalContent => {
   return { ...f, items: f.items.map(i => ({ description: i.description, quantity: amount(i.quantity), unitPrice: amount(i.unitPrice) })), paymentTermsDays: days !== null && Number.isInteger(days) && days >= 0 ? days : null }
 }
 
+/**
+ * Edits that could not be saved yet (an amount to correct, or typing not yet
+ * saved), per proposal version, kept for this session. Leaving the page, by
+ * its back button or another place in the app, never drops them: coming back
+ * shows them again until they are saved or explicitly discarded.
+ */
+const pendingForms = new Map<string, Form>()
+const pendingKey = (proposalId: string, versionId: string) => `${proposalId}:${versionId}`
+
 export function ProposalPage({ product: p, store, proposal, disabled }: { product: InvoiceProduct; store: InvoiceStore; proposal: Proposal; disabled: boolean }): React.ReactElement {
   const latest = latestVersion(proposal)
   // A settled proposal opens on the accepted version; any later draft is kept for the record only.
@@ -44,15 +53,29 @@ export function ProposalPage({ product: p, store, proposal, disabled }: { produc
   const latestSeen = useRef(latest.id)
   useEffect(() => { if (latestSeen.current !== latest.id) { latestSeen.current = latest.id; setVersionId(latest.id) } }, [latest.id])
   const editable = version.status === 'draft' && !settled
-  const [form, setForm] = useState<Form>(() => toForm(version.content))
+  const [form, setForm] = useState<Form>(() => (editable && pendingForms.get(pendingKey(proposal.id, version.id))) || toForm(version.content))
   const committed = useRef(JSON.stringify(version.content))
-  // Take the saved version when nothing typed is waiting, or when another version is shown.
   const shownId = useRef(version.id)
+  // Keep what is on screen for a version being left, unless it is what is saved.
+  const latestState = useRef({ proposal, form, settled })
+  latestState.current = { proposal, form, settled }
+  const remember = (versionId: string) => {
+    const { proposal: current, form: shownForm, settled: isSettled } = latestState.current
+    const left = current.versions.find(v => v.id === versionId), key = pendingKey(current.id, versionId)
+    if (left && left.status === 'draft' && !isSettled && JSON.stringify(shownForm) !== JSON.stringify(toForm(left.content))) pendingForms.set(key, shownForm)
+    else pendingForms.delete(key)
+  }
+  useEffect(() => () => remember(shownId.current), [])
+  // Take the saved version when nothing typed is waiting, or when another version is shown.
   useEffect(() => {
     const saved = JSON.stringify(version.content)
-    if (shownId.current !== version.id || JSON.stringify(fromForm(form)) === committed.current) { setForm(toForm(version.content)); shownId.current = version.id }
+    if (shownId.current !== version.id) {
+      remember(shownId.current)
+      setForm((editable && pendingForms.get(pendingKey(proposal.id, version.id))) || toForm(version.content)); shownId.current = version.id
+    } else if (JSON.stringify(fromForm(form)) === committed.current) setForm(toForm(version.content))
     committed.current = saved
   }, [version.id, version.revision])
+  const discardPending = () => { pendingForms.delete(pendingKey(proposal.id, version.id)); setForm(toForm(version.content)) }
   const content = editable ? fromForm(form) : version.content
   const calculation = calculateProposal(content)
   const issues = editable ? numberIssues(form) : []
@@ -177,7 +200,7 @@ export function ProposalPage({ product: p, store, proposal, disabled }: { produc
                   ))}
                 </tbody>
               </table>
-              {issues.length ? <Callout $tone="bad"><Icon.warn /><span><b>Not saved yet.</b> {issues.map(d => `${fieldName(d.field)}: ${d.message}`).join(' ')}</span></Callout> : null}
+              {issues.length ? <Callout $tone="bad"><Icon.warn /><span><b>Not saved yet.</b> {issues.map(d => `${fieldName(d.field)}: ${d.message}`).join(' ')} Your other edits are kept until then.</span><span className="sp" /><Btn $sm $quiet onClick={discardPending}>Discard unsaved edits</Btn></Callout> : null}
               {editable ? <Btn $quiet $sm style={{ alignSelf: 'flex-start' }} onClick={() => setForm(current => ({ ...current, items: [...current.items, { description: '', quantity: '1', unitPrice: '' }] }))}><Icon.plus />Add item</Btn> : null}
               <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'baseline', gap: 14, paddingTop: 6, borderTop: '1px solid var(--d-line)' }}>
                 <span style={{ fontWeight: 600 }}>Total</span><Mono style={{ fontSize: 20, fontWeight: 600 }}>{content.currency ? formatMoney(calculation.total, content.currency) : calculation.total}</Mono>

@@ -128,6 +128,20 @@ try {
   assert.match(errors.at(-1), /Fix the amounts marked in red before you export/)
   assert.equal(container.querySelector('[aria-label="Item 1 unit price"]').value, '1,000'); assert.equal(fieldByLabel('Timing').value, 'Five weeks')
   assert.equal(disk.proposals[id].versions[0].content.timing, 'Three weeks', 'nothing half-saved')
+  // Leaving keeps those edits: back to the list, or to another place in the app, and back again.
+  const stillPending = where => {
+    assert.equal(container.querySelector('[aria-label="Item 1 unit price"]').value, '1,000', where); assert.equal(fieldByLabel('Timing').value, 'Five weeks', where)
+    assert.ok(container.textContent.includes('Not saved yet.'), where)
+  }
+  await press('Proposals')
+  assert.deepEqual(opened.at(-1), ['proposal', null])
+  await show(createElement(ProposalsView, { product, store: await repo.current(), disabled: false }))
+  await page(id)
+  stillPending('after the back button')
+  await show(createElement('div', null, 'Another place'))
+  await page(id)
+  stillPending('after another place in the app')
+  assert.equal(disk.proposals[id].versions[0].content.timing, 'Three weeks')
   await type(container.querySelector('[aria-label="Item 1 unit price"]'), '1.250,00')
   await type(container.querySelector('[aria-label="Item 1 quantity"]'), '3')
   await type(container.querySelector('[aria-label="Item 1 unit price"]'), '0.1')
@@ -179,6 +193,19 @@ try {
   }
   await press('Export HTML')
   assert.ok(exported.at(-1).html.includes('Round 2'), 'export carries what is on screen')
+  // Unsaved edits are dropped only when the person says so.
+  await type(container.querySelector('[aria-label="Item 1 unit price"]'), '2,675')
+  await type(fieldByLabel('Timing'), 'Throw this away')
+  await show(createElement('div', null, 'Another place'))
+  await page(fractional.id)
+  assert.equal(fieldByLabel('Timing').value, 'Throw this away')
+  await press('Discard unsaved edits')
+  assert.equal(container.querySelector('[aria-label="Item 1 unit price"]').value, '1.005'); assert.equal(fieldByLabel('Timing').value, 'Round 2')
+  assert.ok(!container.textContent.includes('Not saved yet.'))
+  await show(createElement('div', null, 'Another place'))
+  await page(fractional.id)
+  assert.equal(container.querySelector('[aria-label="Item 1 unit price"]').value, '1.005'); assert.equal(fieldByLabel('Timing').value, 'Round 2')
+  assert.equal(disk.proposals[fractional.id].versions[0].content.timing, 'Round 2')
   // Accepting an earlier version while a later draft exists: the page opens on the accepted version, the draft is read-only and cannot be offered.
   const early = await globalThis.proposalTest.commands.createProposal({ details: { title: 'Early', customer: { name: 'Totara Ltd' }, items: [{ description: 'Audit', quantity: 1, unitPrice: 100 }], currency: 'NZD' } })
   const e1 = early.latestVersionId
@@ -209,7 +236,7 @@ try {
   await act(async () => { listRoot.unmount() })
   assert.equal(errors.length, 1, `only the refused export failed: ${errors.join(' | ')}`)
   console.error = originalError
-  console.log('Proposal screens: list, every form field saved by typing, offer, export, revise into a new version, accept and a single invoice draft, decimal commas and refused ambiguous amounts that block export and keep edits, fractional records reopened cleanly, a settled proposal opening on its accepted version, all through the shared proposal commands, passed.')
+  console.log('Proposal screens: list, every form field saved by typing, offer, export, revise into a new version, accept and a single invoice draft, decimal commas and refused ambiguous amounts that block export and keep edits, fractional records reopened cleanly, pending edits kept across leaving and discarded only on request, a settled proposal opening on its accepted version, all through the shared proposal commands, passed.')
 } finally {
   console.error = originalError
   await rm(dir, { recursive: true, force: true })
