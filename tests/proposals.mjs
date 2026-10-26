@@ -28,8 +28,8 @@ try {
   const { InvoiceRepository } = await load('repository')
   const { createInvoiceCommands } = await load('commands')
   const { createProposalCommands } = await load('proposalCommands')
-  const { calculateProposal } = await load('proposals')
-  const { proposalHtml } = await load('proposalHtml')
+  const { calculateProposal, parseAmountInput } = await load('proposals')
+  const { proposalHtml, proposalFileName, saveInNewFolder } = await load('proposalHtml')
   const { calculateInvoice } = await load('calculations')
   const { provisionalLabel } = await load('updates')
   // A spec-compliant HTML parser, from the workspace's own dependencies.
@@ -49,8 +49,14 @@ try {
       return { ok: true, version: String(revision) }
     },
   }
-  const exports = []
-  const saveHtml = async (fileName, html) => { exports.push({ fileName, html }); return { cancelled: false, path: `/exports/${fileName}` } }
+  // Exports go through the app's own new-folder logic onto a stand-in disk that refuses to replace any file or folder.
+  const exports = [], files = new Map(), folders = new Set(['/Shared'])
+  const exportPort = {
+    chooseFolder: async () => '/Shared',
+    createFolder: async (parent, name) => { const path = `${parent}/${name}`; if (folders.has(path)) throw new Error(`exists: ${path}`); folders.add(path); return path },
+    writeText: async (path, text) => { if (files.has(path)) throw new Error(`would replace ${path}`); files.set(path, text) },
+  }
+  const saveHtml = async (fileName, html) => { exports.push({ fileName, html }); return saveInNewFolder(exportPort, fileName, html) }
   /** A fresh app session: a new repository that loads from disk, as after a restart. */
   async function session() {
     const repo = new InvoiceRepository(port); repo.setEnabled(true); await repo.initialize()
@@ -108,6 +114,13 @@ try {
   }
   assert.ok(supportedCurrencies.length > 100)
   assert.deepEqual(money('ISK', [[0.5, 3]]), ['2', '2'])
+  // Typed amounts: a decimal comma or point is read as one; grouping must be in threes; "1,000" alone is refused, never guessed.
+  const typed = (text, precision) => { const r = parseAmountInput(text, precision); return r.ok ? r.value : 'refused' }
+  for (const [text, value] of [['0,5', 0.5], ['19,95', 19.95], ['19.95', 19.95], ['1250,50', 1250.5], ['1.250,50', 1250.5], ['1,250.50', 1250.5], ['1 250,50', 1250.5],
+    ["1'250.50", 1250.5], ['1,000,000', 1000000], ['1.000.000', 1000000], ['0,125', 0.125], ['12,5', 12.5], ['', null], ['1,000', 'refused'], ['2,675', 'refused'],
+    ['1.000', 'refused'], ['1,2,3', 'refused'], ['12,50,000', 'refused'], ['1,25.0', 'refused'], ['abc', 'refused'], ['1e3', 'refused']]) assert.equal(typed(text, 2), value, text)
+  assert.equal(typed('2.675', 3), 2.675, 'a three-decimal currency takes a point with three digits'); assert.equal(typed('2,675', 3), 'refused')
+  assert.match(parseAmountInput('1,000').message, /could mean 1000 or 1 and a fraction\. Type 1000, or 1\.0000/)
   read = await ui.getProposal({ proposalId: id })
   assert.deepEqual(read.version.calculation.lines.map(l => l.amount), ['5999.97', '0.15'])
   assert.equal(read.version.calculation.total, '6000.12')
@@ -139,8 +152,22 @@ try {
   await ui.setProposalStatus({ proposalId: id, versionId: v2, status: 'offered' })
   const accepted = await ui.setProposalStatus({ proposalId: id, versionId: v2, status: 'accepted' })
   assert.equal(accepted.acceptedVersionId, v2); assert.equal(accepted.status, 'accepted')
-  await assert.rejects(ui.setProposalStatus({ proposalId: id, versionId: v1, status: 'accepted' }), /already the accepted one/)
+  await assert.rejects(ui.setProposalStatus({ proposalId: id, versionId: v1, status: 'accepted' }), /settled and its other versions keep their status/)
   await assert.rejects(ui.updateProposal({ proposalId: id, changes: { title: 'late change' } }), /accepted, so this proposal is settled/)
+  // Accepting an earlier offer while a later draft exists settles the proposal: that draft is never offered, by tool or by direct write.
+  const early = await ui.createProposal({ details: { ...details, title: 'Accept the first offer' } })
+  const e1 = early.latestVersionId
+  await ui.setProposalStatus({ proposalId: early.id, versionId: e1, status: 'offered' })
+  const e2 = (await ui.updateProposal({ proposalId: early.id, changes: { timing: 'Later' } })).latestVersionId
+  await ui.setProposalStatus({ proposalId: early.id, versionId: e1, status: 'accepted' })
+  ;({ commands: ui } = await session())
+  read = await ui.getProposal({ proposalId: early.id })
+  assert.equal(read.acceptedVersionId, e1); assert.equal(read.status, 'accepted'); assert.deepEqual(read.versions.map(v => [v.id, v.status]), [[e1, 'accepted'], [e2, 'draft']])
+  await assert.rejects(ui.setProposalStatus({ proposalId: early.id, versionId: e2, status: 'offered' }), /Version 1 was accepted, so this proposal is settled/)
+  await assert.rejects(ui.updateProposal({ proposalId: early.id, changes: { timing: 'Even later' } }), /settled/)
+  const { repo: rawEarly } = await session()
+  await assert.rejects(rawEarly.transact(s => { const v = s.proposals[early.id].versions[1]; v.status = 'offered'; v.offeredAt = '2026-10-25T00:00:00.000Z'; return s }), /settled/)
+  assert.equal(disk.proposals[early.id].versions[1].status, 'draft')
   ;({ commands: ui } = await session())
   read = await ui.getProposal({ proposalId: id, versionId: v1 })
   assert.equal(read.acceptedVersionId, v2); assert.equal(read.status, 'accepted')
@@ -156,7 +183,7 @@ try {
     timing: '<style>body{display:none}</style>', items: [{ description: '<b onclick=alert(7)>Bold</b> & co', quantity: 2, unitPrice: 0.1 }], currency: 'EUR',
     paymentTerms: '<meta http-equiv="refresh" content="0;url=https://example.test">', paymentTermsDays: 7 } })
   const exported = await ui.exportProposal({ proposalId: hostile.id, versionId: hostile.latestVersionId })
-  assert.equal(exported.status, 'saved'); assert.equal(exported.path, `/exports/${exported.fileName}`); assert.match(exported.fileName, /\.html$/)
+  assert.equal(exported.status, 'saved'); assert.match(exported.path, new RegExp(`^/Shared/[^/]+/${exported.fileName.replace(/[.]/g, '[.]')}$`)); assert.equal(files.get(exported.path), exports.at(-1).html); assert.match(exported.fileName, /\.html$/)
   const elements = [], texts = []
   const walk = node => {
     if (node.nodeName === '#text') texts.push(node.value)
@@ -199,6 +226,18 @@ try {
   assert.equal(field(v1Html, 'paymentTerms'), 'Payment terms 50% on acceptance, the rest on delivery. Invoices are due 20 days after the invoice date.')
   assert.match(field(v1Html, 'status'), /^Offered · offered \d{4}-\d{2}-\d{2}$/)
   assert.doesNotMatch(v1Html, /Mere called/, 'the enquiry notes stay internal')
+  const long = await ui.createProposal({ details: { ...details, title: 'A very long proposal title '.repeat(8), customer: { name: 'A customer with a long registered name '.repeat(4) } } })
+  await ui.setProposalStatus({ proposalId: long.id, versionId: long.latestVersionId, status: 'offered' })
+  const longV2 = (await ui.updateProposal({ proposalId: long.id, changes: { timing: 'Revised' } })).latestVersionId
+  const names = [long.latestVersionId, longV2].map(v => proposalFileName(disk.proposals[long.id], v))
+  assert.match(names[0], /-v1\.html$/); assert.match(names[1], /-v2\.html$/); assert.notEqual(names[0], names[1]); assert.ok(names.every(n => n.length <= 90))
+  const savedFirst = await ui.exportProposal({ proposalId: long.id, versionId: long.latestVersionId })
+  const firstCopy = files.get(savedFirst.path)
+  const savedSecond = await ui.exportProposal({ proposalId: long.id, versionId: longV2 })
+  const savedAgain = await ui.exportProposal({ proposalId: long.id, versionId: long.latestVersionId })
+  assert.equal(new Set([savedFirst.path, savedSecond.path, savedAgain.path]).size, 3, 'each export is its own file')
+  assert.equal(files.get(savedFirst.path), firstCopy, 'an earlier export is never replaced')
+  assert.ok(files.get(savedSecond.path).includes('Revised') && !firstCopy.includes('Revised'))
   const v2Html = proposalHtml(disk, disk.proposals[id], v2)
   assert.match(field(v2Html, 'customer'), /^Prepared for Harbour Trust Board /); assert.equal(field(v2Html, 'timing'), 'Timing Six weeks.')
 

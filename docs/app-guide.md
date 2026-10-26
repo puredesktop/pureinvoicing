@@ -21,7 +21,9 @@ An outgoing-invoice workspace for preparing drafts, issuing numbered invoice PDF
 
 **Proposals** holds enquiries and the offers made for them, apart from invoices. Note the enquiry, then fill in the customer (or copy a client), title, scope, deliverables, what is not included, timing, priced items, currency and payment terms. **Export HTML** saves the shown version as a standalone page to share; nothing is sent from the app.
 
-**Mark as offered** records that the customer has the version and fixes its content. Changing it afterwards with **Revise offer** starts the next version; the offered one stays as it was. Record the answer with **Accepted** or **Declined** on the exact version. On the accepted version, **Create invoice draft** makes an ordinary invoice draft with the same customer, items, prices, currency and payment terms; it takes the next invoice number only when issued, and pressing it again opens the same draft. Proposals never use invoice numbers.
+**Mark as offered** records that the customer has the version and fixes its content. Changing it afterwards with **Revise offer** starts the next version; the offered one stays as it was. Record the answer with **Accepted** or **Declined** on the exact version. On the accepted version, **Create invoice draft** makes an ordinary invoice draft with the same customer, items, prices, currency and payment terms; it takes the next invoice number only when issued, and pressing it again opens the same draft. Proposals never use invoice numbers. Once a version is accepted the proposal is settled and opens on that version; a later draft is kept for the record only.
+
+Quantities and prices take a decimal point or a decimal comma (`19.95` or `19,95`; `1,250.50` or `1.250,50`). An amount that could be read two ways, such as `1,000`, is not saved: the form says so and asks for `1000` or `1.0000`.
 
 ## Development and loading
 

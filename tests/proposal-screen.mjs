@@ -104,6 +104,22 @@ try {
   assert.deepEqual({ ...saved, enquiryDate: null }, { title: 'Brand refresh', enquiry: 'Phone call: <b>urgent</b> refresh', enquiryDate: null, customer: { name: 'Kauri & Co', address: '5 Rimu Road\nNelson' },
     scope: 'New logo and colours', deliverables: 'Logo files', exclusions: 'Printing', timing: 'Three weeks', items: [{ description: 'Logo design', quantity: 3, unitPrice: 0.1 }], currency: 'EUR', paymentTerms: 'Half up front', paymentTermsDays: 10 })
   assert.ok(container.textContent.includes('€0.30'), 'the total follows the exact amount')
+  // A decimal comma is a decimal: 0,5 is half, 19,95 is nineteen ninety-five, never 5 or 1995.
+  await type(container.querySelector('[aria-label="Item 1 quantity"]'), '0,5')
+  await type(container.querySelector('[aria-label="Item 1 unit price"]'), '19,95')
+  assert.deepEqual(disk.proposals[id].versions[0].content.items, [{ description: 'Logo design', quantity: 0.5, unitPrice: 19.95 }])
+  assert.ok(container.textContent.includes('€9.98'))
+  // An ambiguous amount is refused on screen and not saved; the saved price stays as it was.
+  await type(container.querySelector('[aria-label="Item 1 unit price"]'), '1,000')
+  assert.equal(disk.proposals[id].versions[0].content.items[0].unitPrice, 19.95)
+  assert.ok(container.textContent.includes('Not saved yet.') && container.textContent.includes('could mean 1000 or 1 and a fraction'))
+  assert.equal(container.querySelector('[aria-label="Item 1 unit price"]').getAttribute('aria-invalid'), 'true')
+  assert.equal(button('Mark as offered').disabled, true)
+  await type(container.querySelector('[aria-label="Item 1 unit price"]'), '1.250,00')
+  await type(container.querySelector('[aria-label="Item 1 quantity"]'), '3')
+  await type(container.querySelector('[aria-label="Item 1 unit price"]'), '0.1')
+  assert.deepEqual(disk.proposals[id].versions[0].content.items, [{ description: 'Logo design', quantity: 3, unitPrice: 0.1 }])
+  assert.ok(!container.textContent.includes('Not saved yet.'))
 
   // Explicit actions, each on the version shown.
   await press('Mark as offered')
@@ -133,12 +149,36 @@ try {
   assert.equal(Object.keys(disk.drafts).length, Object.keys(fixture.drafts).length + 1)
   assert.deepEqual(disk.sequence, fixture.sequence)
 
-  // The list shows where it stands.
-  await show(createElement(ProposalsView, { product, store: await repo.current(), disabled: false }))
-  assert.ok(container.textContent.includes('Kauri & Co') && container.textContent.includes('Accepted') && container.textContent.includes('Invoice draft made'))
+  // Accepting an earlier version while a later draft exists: the page opens on the accepted version, the draft is read-only and cannot be offered.
+  const early = await globalThis.proposalTest.commands.createProposal({ details: { title: 'Early', customer: { name: 'Totara Ltd' }, items: [{ description: 'Audit', quantity: 1, unitPrice: 100 }], currency: 'NZD' } })
+  const e1 = early.latestVersionId
+  await page(early.id)
+  await press('Mark as offered')
+  await page(early.id)
+  await press('Revise offer')
+  await page(early.id)
+  await type(fieldByLabel('Timing'), 'Next month')
+  const e2 = disk.proposals[early.id].versions[1].id
+  await act(async () => { [...container.querySelectorAll('[role="tab"]')].find(t => t.textContent.startsWith('v1')).click() })
+  await press('Accepted')
+  assert.equal(disk.proposals[early.id].acceptedVersionId, e1)
   await act(async () => { root.unmount() })
+  const reopened = createRoot(container)
+  await act(async () => { reopened.render(createElement(ProposalPage, { product, store: await repo.current(), proposal: (await repo.current()).proposals[early.id], disabled: false })) })
+  assert.equal(container.querySelector('[role="tab"][aria-selected="true"]').textContent, 'v1 · Accepted', 'a settled proposal opens on the accepted version')
+  assert.ok(container.textContent.includes('Create invoice draft'))
+  await act(async () => { [...container.querySelectorAll('[role="tab"]')].find(t => t.textContent.startsWith('v2')).click() })
+  assert.equal(fieldByLabel('Customer name').readOnly, true, 'the later draft is read-only')
+  assert.ok(![...container.querySelectorAll('button')].some(b => b.textContent.includes('Mark as offered')))
+  assert.ok(container.textContent.includes('was never offered'))
+  assert.equal(disk.proposals[early.id].versions[1].id, e2); assert.equal(disk.proposals[early.id].versions[1].status, 'draft')
+  await act(async () => { reopened.unmount() })
+  const listRoot = createRoot(container)
+  await act(async () => { listRoot.render(createElement(ProposalsView, { product, store: await repo.current(), disabled: false })) })
+  assert.ok(container.textContent.includes('Kauri & Co') && container.textContent.includes('Accepted') && container.textContent.includes('Invoice draft made'))
+  await act(async () => { listRoot.unmount() })
   console.error = originalError
-  console.log('Proposal screens: list, every form field saved by typing, offer, export, revise into a new version, accept and a single invoice draft, all through the shared proposal commands, passed.')
+  console.log('Proposal screens: list, every form field saved by typing, offer, export, revise into a new version, accept and a single invoice draft, decimal commas and refused ambiguous amounts, a settled proposal opening on its accepted version, all through the shared proposal commands, passed.')
 } finally {
   console.error = originalError
   await rm(dir, { recursive: true, force: true })

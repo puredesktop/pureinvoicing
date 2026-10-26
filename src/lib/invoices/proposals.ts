@@ -35,6 +35,44 @@ export interface ProposalPatch {
   paymentTermsDays?: number | null
 }
 
+/**
+ * A typed amount, read without guessing. A comma or a point can be the
+ * decimal separator ("19,95", "19.95"); with both, the last one is
+ * ("1.250,50", "1,250.50") and the other must group thousands in threes.
+ * Spaces and apostrophes group too. "1,000" alone could be a thousand or
+ * one, so it is refused with a message instead of saved as either; so is
+ * "1.000" unless the amount is in a currency with three decimals (KWD).
+ */
+export type ParsedAmount = { ok: true; value: number | null } | { ok: false; message: string }
+export function parseAmountInput(text: string, precision = 2): ParsedAmount {
+  const t = text.trim().replace(/[\s  ']/g, '')
+  if (!t) return { ok: true, value: null }
+  const fail = (message = 'Type a number, like 1250.50 or 1250,50.'): ParsedAmount => ({ ok: false, message })
+  if (!/^-?\d*[.,]?[\d.,]*$/.test(t) || !/\d/.test(t)) return fail()
+  const grouped = (whole: string, separator: string) => !whole.includes(separator) || new RegExp(`^-?\\d{1,3}(\\${separator}\\d{3})+$`).test(whole)
+  const dot = t.lastIndexOf('.'), comma = t.lastIndexOf(',')
+  let normal: string
+  if (dot >= 0 && comma >= 0) {
+    const decimal = dot > comma ? '.' : ',', group = decimal === '.' ? ',' : '.'
+    const parts = t.split(decimal)
+    if (parts.length !== 2 || !parts[1] || /[.,]/.test(parts[1]) || !grouped(parts[0], group)) return fail()
+    normal = `${parts[0].split(group).join('')}.${parts[1]}`
+  } else if (dot >= 0 || comma >= 0) {
+    const separator = dot >= 0 ? '.' : ',', parts = t.split(separator)
+    if (parts.length > 2) {
+      if (!grouped(t, separator)) return fail()
+      normal = parts.join('')
+    } else {
+      if ((separator === ',' || precision < 3) && parts[1].length === 3 && /^-?[1-9]\d{0,2}$/.test(parts[0])) {
+        return fail(`"${t}" could mean ${parts[0]}${parts[1]} or ${parts[0]} and a fraction. Type ${parts[0]}${parts[1]}, or ${parts[0]}.${parts[1]}0 for the fraction.`)
+      }
+      normal = `${parts[0] || '0'}.${parts[1]}`
+    }
+  } else normal = t
+  const value = Number(normal)
+  return Number.isFinite(value) && /\d/.test(normal) ? { ok: true, value } : fail()
+}
+
 export function getProposal(store: InvoiceStore, id: string): Proposal {
   const proposal = store.proposals && Object.hasOwn(store.proposals, id) ? store.proposals[id] : undefined
   if (!proposal) throw new Error('Proposal not found. Call listProposals for the ids.')
@@ -153,6 +191,9 @@ export function setProposalStatus(store: InvoiceStore, id: string, versionId: st
   const proposal = getProposal(store, id)
   const version = getProposalVersion(proposal, versionId)
   if (version.status === status) return store
+  if (proposal.acceptedVersionId) {
+    throw new Error(`Version ${getProposalVersion(proposal, proposal.acceptedVersionId).number} was accepted, so this proposal is settled and its other versions keep their status. Start a new proposal for further work.`)
+  }
   const replace = (next: ProposalVersion, extra: Partial<Proposal>, note: string) => put(store, { ...proposal, ...extra, updatedAt: at,
     versions: proposal.versions.map(v => (v.id === next.id ? next : v)), history: [...proposal.history, historyEntry(at, note, next.id)] })
   if (status === 'draft') throw new Error(`Version ${version.number} is ${version.status} and stays so. Edit the proposal to start the next draft version.`)
@@ -165,7 +206,6 @@ export function setProposalStatus(store: InvoiceStore, id: string, versionId: st
   }
   if (version.status !== 'offered') throw new Error(`Only an offered version can be ${status}; version ${version.number} is ${version.status}. Mark it offered first.`)
   if (status === 'accepted') {
-    if (proposal.acceptedVersionId) throw new Error(`Version ${getProposalVersion(proposal, proposal.acceptedVersionId).number} is already the accepted one.`)
     return replace({ ...version, status: 'accepted', decidedAt: at, updatedAt: at }, { acceptedVersionId: version.id }, `Version ${version.number} accepted by the customer.`)
   }
   return replace({ ...version, status: 'declined', decidedAt: at, updatedAt: at }, {}, `Version ${version.number} declined by the customer.`)

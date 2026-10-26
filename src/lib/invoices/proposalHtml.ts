@@ -14,10 +14,32 @@ const lines = (value: string) => value.split('\n').map(escapeHtml).join('<br>')
 export const unitPriceText = (value: number, precision: number) => new Intl.NumberFormat('en-US', { minimumFractionDigits: precision, maximumFractionDigits: 20 }).format(value)
 const day = (iso: string | undefined) => iso ? iso.slice(0, 10) : ''
 
+/** The customer and title, shortened; the version always survives the shortening, so two versions never share a name. */
 export function proposalFileName(proposal: Proposal, versionId: string): string {
   const version = getProposalVersion(proposal, versionId)
-  const base = `Proposal-${version.content.customer.name || 'customer'}-${version.content.title || 'offer'}-v${version.number}`
-  return `${base.replace(/[^a-zA-Z0-9._-]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '').slice(0, 90)}.html`
+  const words = `Proposal-${version.content.customer.name || 'customer'}-${version.content.title || 'offer'}`
+    .replace(/[^a-zA-Z0-9._-]+/g, '-').replace(/-+/g, '-').slice(0, 80).replace(/^[-.]+|[-.]+$/g, '')
+  return `${words || 'Proposal'}-v${version.number}.html`
+}
+
+/** Where a saved export goes: a folder the person picks, a new folder in it, one file. */
+export interface ExportFolderPort {
+  chooseFolder(): Promise<string | null>
+  createFolder(parent: string, name: string): Promise<string>
+  writeText(path: string, text: string): Promise<void>
+}
+/**
+ * Every export gets a new folder of its own inside the folder the person
+ * picked, so saving again (another version, or the same one) never replaces
+ * a copy that may already have been shared.
+ */
+export async function saveInNewFolder(port: ExportFolderPort, fileName: string, text: string, unique: string = crypto.randomUUID().slice(0, 8)) {
+  const parent = await port.chooseFolder()
+  if (!parent) return { cancelled: true as const }
+  const folder = await port.createFolder(parent, `${fileName.replace(/\.html$/i, '')}-${unique}`)
+  const path = `${folder}/${fileName}`
+  await port.writeText(path, text)
+  return { cancelled: false as const, path }
 }
 
 /**

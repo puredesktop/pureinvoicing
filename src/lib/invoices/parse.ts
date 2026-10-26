@@ -331,6 +331,9 @@ export function assertProposalTransition(previous: InvoiceStore, next: InvoiceSt
       if (later.status === 'draft' || (decided.includes(version.status) && later.status !== version.status)) throw new Error(`Version ${version.number} is ${version.status}; that cannot be undone.`)
     })
     if (proposal.acceptedVersionId && newer.acceptedVersionId !== proposal.acceptedVersionId) throw new Error('The accepted version of a proposal is fixed.')
+    if (proposal.acceptedVersionId && (newer.versions.length !== proposal.versions.length || newer.versions.some((v, i) => v.status !== proposal.versions[i].status))) {
+      throw new Error('An accepted proposal is settled: no versions are added and none changes status.')
+    }
     if (proposal.conversion && JSON.stringify(newer.conversion) !== JSON.stringify(proposal.conversion)) {
       const id = proposal.conversion.invoiceId
       if (Object.hasOwn(next.drafts, id) || Object.hasOwn(next.invoices, id) || newer.conversion?.versionId !== proposal.conversion.versionId) throw new Error('The invoice made from an accepted proposal stays linked to it.')

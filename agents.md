@@ -186,7 +186,9 @@ number. Rules:
   offer as the customer saw it. Offering needs a customer name, a currency
   and complete items; the reply lists what is missing.
 - **Decisions**: `accepted` or `declined` on one named offered version.
-  Only one version can be accepted, and an accepted proposal takes no edits.
+  Only one version can be accepted. An accepted proposal is settled: it
+  takes no edits and no other version changes status, so a draft left after
+  an earlier version was accepted is never offered.
   These record what the person tells you; nothing is sent and nothing here
   is a signature. Never mark a version offered or accepted on your own
   inference.

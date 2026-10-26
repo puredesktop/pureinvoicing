@@ -4,9 +4,10 @@ import { agentRefs, proposalRefs, versionRefs } from '../../../lib/agentRefs'
 import { COMMON_CURRENCIES, supportedCurrencies } from '../../../lib/invoices/defaults'
 import { formatAmount, formatMoney } from '../../../lib/invoices/money'
 import { unitPriceText } from '../../../lib/invoices/proposalHtml'
-import { PROPOSAL_STATUS_LABEL, calculateProposal, conversionTarget, latestVersion } from '../../../lib/invoices/proposals'
+import { currencyPrecision } from '../../../lib/invoices/calculations'
+import { PROPOSAL_STATUS_LABEL, calculateProposal, conversionTarget, latestVersion, parseAmountInput } from '../../../lib/invoices/proposals'
 import { invoiceCommands } from '../../../lib/invoices/workspace'
-import type { InvoiceStore, Proposal, ProposalContent, ProposalVersion } from '../../../lib/invoices/types'
+import type { Diagnostic, InvoiceStore, Proposal, ProposalContent, ProposalVersion } from '../../../lib/invoices/types'
 import { Icon, shortDate } from '../bits'
 import { Area, Body, Btn, Callout, Card, Field, Grid, Hint, IconBtn, Input, Kicker, Main, Meta, Mono, Panel, Sec, SecHead, Seg, SegBtn, Select, TopBar } from '../deskStyles'
 import { ProposalStatusChip } from './ProposalsView'
@@ -15,20 +16,35 @@ import { ProposalStatusChip } from './ProposalsView'
 type FormItem = { description: string; quantity: string; unitPrice: string }
 type Form = Omit<ProposalContent, 'items' | 'paymentTermsDays'> & { items: FormItem[]; paymentTermsDays: string }
 const toForm = (c: ProposalContent): Form => ({ ...c, items: c.items.map(i => ({ description: i.description, quantity: i.quantity === null ? '' : String(i.quantity), unitPrice: i.unitPrice === null ? '' : String(i.unitPrice) })), paymentTermsDays: c.paymentTermsDays === null ? '' : String(c.paymentTermsDays) })
-const number = (text: string): number | null => { const t = text.trim().replace(/[,\s]/g, ''); if (!t) return null; const n = Number(t); return Number.isFinite(n) ? n : null }
+const amount = (text: string, precision: number): number | null => { const r = parseAmountInput(text, precision); return r.ok ? r.value : null }
+/** Typed numbers that cannot be read without guessing, each with what to type instead. Nothing is saved while any remains. */
+function numberIssues(f: Form): Diagnostic[] {
+  const precision = currencyPrecision(f.currency), issues: Diagnostic[] = []
+  f.items.forEach((item, index) => {
+    for (const key of ['quantity', 'unitPrice'] as const) {
+      const r = parseAmountInput(item[key], key === 'unitPrice' ? precision : 2)
+      if (!r.ok) issues.push({ field: `items.${index}.${key}`, message: r.message })
+    }
+  })
+  const days = parseAmountInput(f.paymentTermsDays, 0)
+  if (!days.ok || (days.value !== null && !(Number.isInteger(days.value) && days.value >= 0))) issues.push({ field: 'paymentTermsDays', message: 'Enter whole days, like 14.' })
+  return issues
+}
 const fromForm = (f: Form): ProposalContent => {
-  const days = number(f.paymentTermsDays)
-  return { ...f, items: f.items.map(i => ({ description: i.description, quantity: number(i.quantity), unitPrice: number(i.unitPrice) })), paymentTermsDays: days !== null && Number.isInteger(days) && days >= 0 ? days : null }
+  const precision = currencyPrecision(f.currency), days = amount(f.paymentTermsDays, 0)
+  return { ...f, items: f.items.map(i => ({ description: i.description, quantity: amount(i.quantity, 2), unitPrice: amount(i.unitPrice, precision) })), paymentTermsDays: days !== null && Number.isInteger(days) && days >= 0 ? days : null }
 }
 
 export function ProposalPage({ product: p, store, proposal, disabled }: { product: InvoiceProduct; store: InvoiceStore; proposal: Proposal; disabled: boolean }): React.ReactElement {
   const latest = latestVersion(proposal)
-  const [versionId, setVersionId] = useState(latest.id)
+  // A settled proposal opens on the accepted version; any later draft is kept for the record only.
+  const settled = !!proposal.acceptedVersionId
+  const [versionId, setVersionId] = useState(proposal.acceptedVersionId ?? latest.id)
   const version = proposal.versions.find(v => v.id === versionId) ?? latest
   // Follow a new version as soon as one appears (a revision started here or by the assistant).
   const latestSeen = useRef(latest.id)
   useEffect(() => { if (latestSeen.current !== latest.id) { latestSeen.current = latest.id; setVersionId(latest.id) } }, [latest.id])
-  const editable = version.status === 'draft'
+  const editable = version.status === 'draft' && !settled
   const [form, setForm] = useState<Form>(() => toForm(version.content))
   const committed = useRef(JSON.stringify(version.content))
   // Take the saved version when nothing typed is waiting, or when another version is shown.
@@ -40,10 +56,11 @@ export function ProposalPage({ product: p, store, proposal, disabled }: { produc
   }, [version.id, version.revision])
   const content = editable ? fromForm(form) : version.content
   const calculation = calculateProposal(content)
-  const problem = (field: string) => editable ? calculation.diagnostics.find(d => d.field === field)?.message : undefined
+  const issues = editable ? numberIssues(form) : []
+  const problem = (field: string) => editable ? (issues.find(d => d.field === field) ?? calculation.diagnostics.find(d => d.field === field))?.message : undefined
   /** Save what is typed (the whole version: fields and the full item list). */
   const commit = async (current = form) => {
-    if (!editable) return
+    if (!editable || numberIssues(current).length) return
     const next = fromForm(current), text = JSON.stringify(next)
     if (text === committed.current) return
     committed.current = text
@@ -88,7 +105,8 @@ export function ProposalPage({ product: p, store, proposal, disabled }: { produc
       <Body style={{ gap: 14 }} {...agentRefs(label, proposalRefs(proposal.id), '@open')}>
         <Main style={{ overflow: 'auto' }}>
           <Panel $strong>
-            {!editable ? <Sec><Callout $tone="info"><Icon.info /><span><b>Version {version.number} is {PROPOSAL_STATUS_LABEL[version.status].toLowerCase()}.</b> It stays exactly as {version.offeredAt ? `offered on ${shortDate(version.offeredAt)}` : 'it was'}. {version.id === latest.id && !proposal.acceptedVersionId ? 'Revising it starts the next version.' : ''}</span></Callout></Sec> : null}
+            {!editable && version.status === 'draft' ? <Sec><Callout $tone="info"><Icon.info /><span><b>Version {version.number} was never offered.</b> Version {proposal.versions.find(v => v.id === proposal.acceptedVersionId)?.number} was accepted, so this proposal is settled and this draft is kept as it is.</span></Callout></Sec>
+              : !editable ? <Sec><Callout $tone="info"><Icon.info /><span><b>Version {version.number} is {PROPOSAL_STATUS_LABEL[version.status].toLowerCase()}.</b> It stays exactly as {version.offeredAt ? `offered on ${shortDate(version.offeredAt)}` : 'it was'}. {version.id === latest.id && !proposal.acceptedVersionId ? 'Revising it starts the next version.' : ''}</span></Callout></Sec> : null}
             <Sec>
               <SecHead><h3>Enquiry</h3><span className="sp" /><Hint>Kept for your record; not printed on the offer</Hint></SecHead>
               <Grid $cols="160px 1fr">
@@ -146,6 +164,7 @@ export function ProposalPage({ product: p, store, proposal, disabled }: { produc
                   ))}
                 </tbody>
               </table>
+              {issues.length ? <Callout $tone="bad"><Icon.warn /><span><b>Not saved yet.</b> {issues.map(d => `${fieldName(d.field)}: ${d.message}`).join(' ')}</span></Callout> : null}
               {editable ? <Btn $quiet $sm style={{ alignSelf: 'flex-start' }} onClick={() => setForm(current => ({ ...current, items: [...current.items, { description: '', quantity: '1', unitPrice: '' }] }))}><Icon.plus />Add item</Btn> : null}
               <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'baseline', gap: 14, paddingTop: 6, borderTop: '1px solid var(--d-line)' }}>
                 <span style={{ fontWeight: 600 }}>Total</span><Mono style={{ fontSize: 20, fontWeight: 600 }}>{content.currency ? formatMoney(calculation.total, content.currency) : calculation.total}</Mono>
@@ -155,7 +174,7 @@ export function ProposalPage({ product: p, store, proposal, disabled }: { produc
               <SecHead><h3>Payment terms</h3></SecHead>
               <Grid $cols="1fr 180px">
                 {editable ? text('paymentTerms', 'Terms', 'e.g. 50% on acceptance, the rest on delivery') : <Field as="div"><span>Terms</span><div style={{ whiteSpace: 'pre-wrap', fontSize: 13 }}>{version.content.paymentTerms || <Meta>Not stated</Meta>}</div></Field>}
-                <Field><span>Invoice due after (days)</span><Input value={shown.paymentTermsDays} inputMode="numeric" placeholder="e.g. 14" readOnly={!editable} onChange={event => set({ paymentTermsDays: event.target.value })} onBlur={() => void commit()} /></Field>
+                <Field><span>Invoice due after (days)</span><Input value={shown.paymentTermsDays} inputMode="numeric" placeholder="e.g. 14" readOnly={!editable} aria-invalid={!!problem('paymentTermsDays')} onChange={event => set({ paymentTermsDays: event.target.value })} onBlur={() => void commit()} /></Field>
               </Grid>
             </Sec>
           </Panel>
@@ -164,9 +183,9 @@ export function ProposalPage({ product: p, store, proposal, disabled }: { produc
           <Card style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10 }} {...agentRefs(`Version ${version.number}`, versionRefs(version.id))}>
             <Kicker>Version {version.number} of {proposal.versions.length}</Kicker>
             <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}><Meta>Total</Meta><Mono style={{ fontSize: 18, fontWeight: 600 }}>{content.currency ? formatMoney(calculation.total, content.currency) : calculation.total}</Mono></div>
-            <Actions p={p} proposal={proposal} version={version} latest={latest} disabled={disabled} ready={calculation.complete} target={target}
+            <Actions p={p} proposal={proposal} version={version} latest={latest} disabled={disabled} ready={calculation.complete && !issues.length} target={target}
               status={status} revise={revise} convert={convert} />
-            {editable && calculation.diagnostics.length ? <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}><Kicker>Before it can be offered</Kicker>{calculation.diagnostics.map(d => <Hint key={d.field}>{fieldName(d.field)}: {d.message}</Hint>)}</div> : null}
+            {editable && (issues.length || calculation.diagnostics.length) ? <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}><Kicker>Before it can be offered</Kicker>{[...issues, ...calculation.diagnostics.filter(d => !issues.some(i => i.field === d.field))].map(d => <Hint key={d.field}>{fieldName(d.field)}: {d.message}</Hint>)}</div> : null}
           </Card>
           <Card style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 6 }}>
             <Kicker>History</Kicker>
@@ -181,7 +200,7 @@ export function ProposalPage({ product: p, store, proposal, disabled }: { produc
 function fieldName(field: string): string {
   const item = /^items\.(\d+)\.(\w+)$/.exec(field)
   if (item) return `Item ${Number(item[1]) + 1} ${item[2] === 'unitPrice' ? 'price' : item[2]}`
-  return ({ 'customer.name': 'Customer', currency: 'Currency', items: 'Prices', enquiryDate: 'Received' } as Record<string, string>)[field] ?? field
+  return ({ 'customer.name': 'Customer', currency: 'Currency', items: 'Prices', enquiryDate: 'Received', paymentTermsDays: 'Invoice due after' } as Record<string, string>)[field] ?? field
 }
 
 function ReadOnlyOffer({ content }: { content: ProposalContent }): React.ReactElement {
@@ -195,6 +214,7 @@ function Actions({ p, proposal, version, latest, disabled, ready, target, status
   status: (next: 'offered' | 'accepted' | 'declined', words: string) => void; revise: () => void; convert: () => void
 }): React.ReactElement {
   const settled = !!proposal.acceptedVersionId
+  if (version.status === 'draft' && settled) return <Hint>This draft was never offered. Version {proposal.versions.find(v => v.id === proposal.acceptedVersionId)?.number} was accepted, so nothing more is offered from this proposal.</Hint>
   if (version.status === 'draft') return <>
     <Btn $acc disabled={disabled || !ready} onClick={() => status('offered', `Version ${version.number} marked offered. Its content is now fixed.`)}><Icon.check />Mark as offered</Btn>
     <Hint>Record that you have sent or given this version to the customer. Nothing is sent from here.</Hint>
