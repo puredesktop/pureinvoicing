@@ -39,12 +39,13 @@ export interface ProposalPatch {
  * A typed amount, read without guessing. A comma or a point can be the
  * decimal separator ("19,95", "19.95"); with both, the last one is
  * ("1.250,50", "1,250.50") and the other must group thousands in threes.
- * Spaces and apostrophes group too. "1,000" alone could be a thousand or
- * one, so it is refused with a message instead of saved as either; so is
- * "1.000" unless the amount is in a currency with three decimals (KWD).
+ * Spaces and apostrophes group too. A lone point is always the decimal
+ * point, as everywhere else in the app ("1.005" is one and five thousandths).
+ * A lone comma with three digits after it ("1,000") could be a thousand or
+ * one, so it is refused with a message instead of saved as either.
  */
 export type ParsedAmount = { ok: true; value: number | null } | { ok: false; message: string }
-export function parseAmountInput(text: string, precision = 2): ParsedAmount {
+export function parseAmountInput(text: string): ParsedAmount {
   const t = text.trim().replace(/[\s  ']/g, '')
   if (!t) return { ok: true, value: null }
   const fail = (message = 'Type a number, like 1250.50 or 1250,50.'): ParsedAmount => ({ ok: false, message })
@@ -63,7 +64,7 @@ export function parseAmountInput(text: string, precision = 2): ParsedAmount {
       if (!grouped(t, separator)) return fail()
       normal = parts.join('')
     } else {
-      if ((separator === ',' || precision < 3) && parts[1].length === 3 && /^-?[1-9]\d{0,2}$/.test(parts[0])) {
+      if (separator === ',' && parts[1].length === 3 && /^-?[1-9]\d{0,2}$/.test(parts[0])) {
         return fail(`"${t}" could mean ${parts[0]}${parts[1]} or ${parts[0]} and a fraction. Type ${parts[0]}${parts[1]}, or ${parts[0]}.${parts[1]}0 for the fraction.`)
       }
       normal = `${parts[0] || '0'}.${parts[1]}`
@@ -71,6 +72,11 @@ export function parseAmountInput(text: string, precision = 2): ParsedAmount {
   } else normal = t
   const value = Number(normal)
   return Number.isFinite(value) && /\d/.test(normal) ? { ok: true, value } : fail()
+}
+
+/** A saved number written back for editing: plain digits and a point, never grouping or an exponent, so it reads back as exactly the same number. */
+export function amountText(value: number | null): string {
+  return value === null ? '' : new Intl.NumberFormat('en-US', { useGrouping: false, maximumFractionDigits: 20 }).format(value)
 }
 
 export function getProposal(store: InvoiceStore, id: string): Proposal {

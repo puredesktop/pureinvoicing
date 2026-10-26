@@ -28,7 +28,7 @@ try {
   const { InvoiceRepository } = await load('repository')
   const { createInvoiceCommands } = await load('commands')
   const { createProposalCommands } = await load('proposalCommands')
-  const { calculateProposal, parseAmountInput } = await load('proposals')
+  const { calculateProposal, parseAmountInput, amountText } = await load('proposals')
   const { proposalHtml, proposalFileName, saveInNewFolder } = await load('proposalHtml')
   const { calculateInvoice } = await load('calculations')
   const { provisionalLabel } = await load('updates')
@@ -114,12 +114,16 @@ try {
   }
   assert.ok(supportedCurrencies.length > 100)
   assert.deepEqual(money('ISK', [[0.5, 3]]), ['2', '2'])
-  // Typed amounts: a decimal comma or point is read as one; grouping must be in threes; "1,000" alone is refused, never guessed.
-  const typed = (text, precision) => { const r = parseAmountInput(text, precision); return r.ok ? r.value : 'refused' }
+  // Typed amounts: a decimal comma or point is read as one; grouping must be in threes; a lone point is the decimal point; "1,000" alone is refused, never guessed.
+  const typed = text => { const r = parseAmountInput(text); return r.ok ? r.value : 'refused' }
   for (const [text, value] of [['0,5', 0.5], ['19,95', 19.95], ['19.95', 19.95], ['1250,50', 1250.5], ['1.250,50', 1250.5], ['1,250.50', 1250.5], ['1 250,50', 1250.5],
     ["1'250.50", 1250.5], ['1,000,000', 1000000], ['1.000.000', 1000000], ['0,125', 0.125], ['12,5', 12.5], ['', null], ['1,000', 'refused'], ['2,675', 'refused'],
-    ['1.000', 'refused'], ['1,2,3', 'refused'], ['12,50,000', 'refused'], ['1,25.0', 'refused'], ['abc', 'refused'], ['1e3', 'refused']]) assert.equal(typed(text, 2), value, text)
-  assert.equal(typed('2.675', 3), 2.675, 'a three-decimal currency takes a point with three digits'); assert.equal(typed('2,675', 3), 'refused')
+    ['1.005', 1.005], ['2.675', 2.675], ['1.000', 1], ['1,2,3', 'refused'], ['12,50,000', 'refused'], ['1,25.0', 'refused'], ['abc', 'refused'], ['1e3', 'refused']]) assert.equal(typed(text), value, text)
+  // Every saved number is written back for editing so that it reads back as exactly itself.
+  for (const n of [1.005, 0.125, 2.675, 0.1, 19.95, 1999.99, 1e-7, 0.0005, 1234567.891, 1e21, 3, 0, -2.5]) {
+    assert.doesNotMatch(amountText(n), /[,e]/i, String(n)); assert.equal(typed(amountText(n)), n, `${n} → ${amountText(n)}`)
+  }
+  assert.equal(amountText(null), ''); assert.equal(amountText(1.005), '1.005'); assert.equal(amountText(1e-7), '0.0000001')
   assert.match(parseAmountInput('1,000').message, /could mean 1000 or 1 and a fraction\. Type 1000, or 1\.0000/)
   read = await ui.getProposal({ proposalId: id })
   assert.deepEqual(read.version.calculation.lines.map(l => l.amount), ['5999.97', '0.15'])

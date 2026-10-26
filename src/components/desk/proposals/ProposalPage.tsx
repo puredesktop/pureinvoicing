@@ -4,8 +4,7 @@ import { agentRefs, proposalRefs, versionRefs } from '../../../lib/agentRefs'
 import { COMMON_CURRENCIES, supportedCurrencies } from '../../../lib/invoices/defaults'
 import { formatAmount, formatMoney } from '../../../lib/invoices/money'
 import { unitPriceText } from '../../../lib/invoices/proposalHtml'
-import { currencyPrecision } from '../../../lib/invoices/calculations'
-import { PROPOSAL_STATUS_LABEL, calculateProposal, conversionTarget, latestVersion, parseAmountInput } from '../../../lib/invoices/proposals'
+import { PROPOSAL_STATUS_LABEL, amountText, calculateProposal, conversionTarget, latestVersion, parseAmountInput } from '../../../lib/invoices/proposals'
 import { invoiceCommands } from '../../../lib/invoices/workspace'
 import type { Diagnostic, InvoiceStore, Proposal, ProposalContent, ProposalVersion } from '../../../lib/invoices/types'
 import { Icon, shortDate } from '../bits'
@@ -15,24 +14,24 @@ import { ProposalStatusChip } from './ProposalsView'
 /** The form holds what is typed; numbers stay text until they are saved, so "1." or "0,5" never fight the keyboard. */
 type FormItem = { description: string; quantity: string; unitPrice: string }
 type Form = Omit<ProposalContent, 'items' | 'paymentTermsDays'> & { items: FormItem[]; paymentTermsDays: string }
-const toForm = (c: ProposalContent): Form => ({ ...c, items: c.items.map(i => ({ description: i.description, quantity: i.quantity === null ? '' : String(i.quantity), unitPrice: i.unitPrice === null ? '' : String(i.unitPrice) })), paymentTermsDays: c.paymentTermsDays === null ? '' : String(c.paymentTermsDays) })
-const amount = (text: string, precision: number): number | null => { const r = parseAmountInput(text, precision); return r.ok ? r.value : null }
+const toForm = (c: ProposalContent): Form => ({ ...c, items: c.items.map(i => ({ description: i.description, quantity: amountText(i.quantity), unitPrice: amountText(i.unitPrice) })), paymentTermsDays: amountText(c.paymentTermsDays) })
+const amount = (text: string): number | null => { const r = parseAmountInput(text); return r.ok ? r.value : null }
 /** Typed numbers that cannot be read without guessing, each with what to type instead. Nothing is saved while any remains. */
 function numberIssues(f: Form): Diagnostic[] {
-  const precision = currencyPrecision(f.currency), issues: Diagnostic[] = []
+  const issues: Diagnostic[] = []
   f.items.forEach((item, index) => {
     for (const key of ['quantity', 'unitPrice'] as const) {
-      const r = parseAmountInput(item[key], key === 'unitPrice' ? precision : 2)
+      const r = parseAmountInput(item[key])
       if (!r.ok) issues.push({ field: `items.${index}.${key}`, message: r.message })
     }
   })
-  const days = parseAmountInput(f.paymentTermsDays, 0)
+  const days = parseAmountInput(f.paymentTermsDays)
   if (!days.ok || (days.value !== null && !(Number.isInteger(days.value) && days.value >= 0))) issues.push({ field: 'paymentTermsDays', message: 'Enter whole days, like 14.' })
   return issues
 }
 const fromForm = (f: Form): ProposalContent => {
-  const precision = currencyPrecision(f.currency), days = amount(f.paymentTermsDays, 0)
-  return { ...f, items: f.items.map(i => ({ description: i.description, quantity: amount(i.quantity, 2), unitPrice: amount(i.unitPrice, precision) })), paymentTermsDays: days !== null && Number.isInteger(days) && days >= 0 ? days : null }
+  const days = amount(f.paymentTermsDays)
+  return { ...f, items: f.items.map(i => ({ description: i.description, quantity: amount(i.quantity), unitPrice: amount(i.unitPrice) })), paymentTermsDays: days !== null && Number.isInteger(days) && days >= 0 ? days : null }
 }
 
 export function ProposalPage({ product: p, store, proposal, disabled }: { product: InvoiceProduct; store: InvoiceStore; proposal: Proposal; disabled: boolean }): React.ReactElement {
@@ -58,14 +57,28 @@ export function ProposalPage({ product: p, store, proposal, disabled }: { produc
   const calculation = calculateProposal(content)
   const issues = editable ? numberIssues(form) : []
   const problem = (field: string) => editable ? (issues.find(d => d.field === field) ?? calculation.diagnostics.find(d => d.field === field))?.message : undefined
-  /** Save what is typed (the whole version: fields and the full item list). */
-  const commit = async (current = form) => {
-    if (!editable || numberIssues(current).length) return
+  /**
+   * Save what is typed (the whole version: fields and the full item list).
+   * The outcome says whether what is on screen is now what is saved:
+   * 'blocked' when an amount cannot be read, 'failed' when the save failed.
+   */
+  const commit = async (current = form): Promise<'saved' | 'unchanged' | 'blocked' | 'failed'> => {
+    if (!editable) return 'unchanged'
+    if (numberIssues(current).length) return 'blocked'
     const next = fromForm(current), text = JSON.stringify(next)
-    if (text === committed.current) return
+    if (text === committed.current) return 'unchanged'
+    const before = committed.current
     committed.current = text
     const { clientId: _clientId, ...changes } = next
-    await p.quietly(() => invoiceCommands.updateProposal({ proposalId: proposal.id, changes }))
+    const result = await p.quietly(() => invoiceCommands.updateProposal({ proposalId: proposal.id, changes }))
+    if (result === undefined) { committed.current = before; return 'failed' }
+    return 'saved'
+  }
+  /** Before anything that reads the saved version: save what is on screen, or stop and keep it. */
+  const saveFirst = async (doing: string) => {
+    const outcome = await commit()
+    if (outcome === 'blocked') throw new Error(`Fix the amounts marked in red before you ${doing}; your edits are kept on screen but are not saved yet.`)
+    if (outcome === 'failed') throw new Error(`Your latest edits could not be saved, so nothing was done. They are kept on screen; try to ${doing} again.`)
   }
   const set = (patch: Partial<Form>) => setForm(current => ({ ...current, ...patch }))
   const setCustomer = (patch: Partial<Form['customer']>) => setForm(current => ({ ...current, customer: { ...current.customer, ...patch } }))
@@ -73,15 +86,15 @@ export function ProposalPage({ product: p, store, proposal, disabled }: { produc
   const target = conversionTarget(store, proposal)
   const currencies = [...COMMON_CURRENCIES, ...(content.currency && !COMMON_CURRENCIES.includes(content.currency) ? [content.currency] : [])]
   const label = `${content.customer.name || 'New proposal'} · ${content.title || 'Untitled'}`
-  const status = (next: 'offered' | 'accepted' | 'declined', words: string) => p.act(async () => { await commit(); await invoiceCommands.setProposalStatus({ proposalId: proposal.id, versionId: version.id, status: next }) }, words)
+  const status = (next: 'offered' | 'accepted' | 'declined', words: string) => p.act(async () => { await saveFirst('change its status'); await invoiceCommands.setProposalStatus({ proposalId: proposal.id, versionId: version.id, status: next }) }, words)
   const revise = () => p.act(async () => { await invoiceCommands.updateProposal({ proposalId: proposal.id }) }, `Version ${latest.number + 1} started from version ${latest.number}. The offer stays as it was.`)
-  const exportHtml = () => p.act(async () => { await commit(); return invoiceCommands.exportProposal({ proposalId: proposal.id, versionId: version.id }) },
+  const exportHtml = () => p.act(async () => { await saveFirst('export'); return invoiceCommands.exportProposal({ proposalId: proposal.id, versionId: version.id }) },
     result => { const r = result as { status: string; fileName: string; path?: string }; return r.status === 'cancelled' ? 'Export cancelled.' : `Saved ${r.fileName}${r.path ? ` · ${r.path}` : ''}. Nothing was sent.` })
   const convert = () => p.act(async () => {
     const r = await invoiceCommands.convertProposalToInvoice({ proposalId: proposal.id, versionId: version.id })
     await p.openDraft(r.invoiceId)
   }, `Invoice draft made from accepted version ${version.number}. It takes its number when you issue it.`)
-  const copyClient = (clientId: string) => p.act(async () => { await commit(); await invoiceCommands.updateProposal({ proposalId: proposal.id, clientId }) }, `Customer copied from ${store.clients[clientId]?.name ?? 'the client'}. The client record is unchanged.`)
+  const copyClient = (clientId: string) => p.act(async () => { await saveFirst('copy a client'); await invoiceCommands.updateProposal({ proposalId: proposal.id, clientId }) }, `Customer copied from ${store.clients[clientId]?.name ?? 'the client'}. The client record is unchanged.`)
   const text = (key: 'title' | 'scope' | 'deliverables' | 'exclusions' | 'timing' | 'enquiry' | 'paymentTerms', name: string, placeholder: string, area = true) => (
     <Field><span>{name}</span>{area
       ? <Area value={form[key]} placeholder={placeholder} readOnly={!editable} onChange={event => set({ [key]: event.target.value })} onBlur={() => void commit()} />
@@ -97,7 +110,7 @@ export function ProposalPage({ product: p, store, proposal, disabled }: { produc
         <span style={{ flex: 1 }} />
         {proposal.versions.length > 1 ? (
           <Seg role="tablist" aria-label="Versions">
-            {proposal.versions.map(v => <SegBtn key={v.id} role="tab" aria-selected={v.id === version.id} $on={v.id === version.id} {...agentRefs(`Version ${v.number}`, versionRefs(v.id))} onClick={() => { void commit(); setVersionId(v.id) }}>v{v.number} · {PROPOSAL_STATUS_LABEL[v.status]}</SegBtn>)}
+            {proposal.versions.map(v => <SegBtn key={v.id} role="tab" aria-selected={v.id === version.id} $on={v.id === version.id} {...agentRefs(`Version ${v.number}`, versionRefs(v.id))} onClick={() => { if (v.id !== version.id) void p.act(async () => { await saveFirst('switch versions'); setVersionId(v.id) }) }}>v{v.number} · {PROPOSAL_STATUS_LABEL[v.status]}</SegBtn>)}
           </Seg>
         ) : null}
         <Btn $sm disabled={disabled} onClick={exportHtml}><Icon.download />Export HTML</Btn>

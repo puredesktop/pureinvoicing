@@ -49,10 +49,14 @@ try {
   console.error = () => {}
 
   // A fake desk: actions run at once, and navigation is recorded.
-  const opened = [], messages = []
+  // Like the desk, a failed action shows its message and leaves the screen as it was.
+  const opened = [], messages = [], errors = []
   const product = {
     selectedProposalId: null,
-    act: async (action, done) => { const result = await action(); const text = typeof done === 'function' ? done(result) : done; if (text) messages.push(text) },
+    act: async (action, done) => {
+      try { const result = await action(); const text = typeof done === 'function' ? done(result) : done; if (text) messages.push(text) }
+      catch (error) { errors.push(error.message) }
+    },
     quietly: action => action(),
     openProposal: async id => { opened.push(['proposal', id]) },
     openDraft: async id => { opened.push(['invoice', id]) },
@@ -64,6 +68,7 @@ try {
   const page = async id => show(createElement(ProposalPage, { key: id, product, store: await repo.current(), proposal: (await repo.current()).proposals[id], disabled: false }))
   const button = text => { const found = [...container.querySelectorAll('button')].find(b => b.textContent.trim().includes(text)); assert.ok(found, `button "${text}"`); return found }
   const press = async text => { await act(async () => { button(text).click() }); await act(async () => { await new Promise(r => setTimeout(r, 0)) }) }
+  const tab = async prefix => { await act(async () => { [...container.querySelectorAll('[role="tab"]')].find(t => t.textContent.startsWith(prefix)).click() }); await act(async () => { await new Promise(r => setTimeout(r, 0)) }) }
   const fieldByLabel = text => { const label = [...container.querySelectorAll('label')].find(l => l.firstElementChild?.textContent === text); assert.ok(label, `field "${text}"`); return label.querySelector('input, textarea, select') }
   const type = async (element, value) => {
     await act(async () => {
@@ -115,11 +120,21 @@ try {
   assert.ok(container.textContent.includes('Not saved yet.') && container.textContent.includes('could mean 1000 or 1 and a fraction'))
   assert.equal(container.querySelector('[aria-label="Item 1 unit price"]').getAttribute('aria-invalid'), 'true')
   assert.equal(button('Mark as offered').disabled, true)
+  // While an amount cannot be read, nothing that reads the saved version runs: export is refused and every pending edit stays on screen.
+  await type(fieldByLabel('Timing'), 'Five weeks')
+  const exportsBefore = exported.length
+  await press('Export HTML')
+  assert.equal(exported.length, exportsBefore, 'no export of the older saved content')
+  assert.match(errors.at(-1), /Fix the amounts marked in red before you export/)
+  assert.equal(container.querySelector('[aria-label="Item 1 unit price"]').value, '1,000'); assert.equal(fieldByLabel('Timing').value, 'Five weeks')
+  assert.equal(disk.proposals[id].versions[0].content.timing, 'Three weeks', 'nothing half-saved')
   await type(container.querySelector('[aria-label="Item 1 unit price"]'), '1.250,00')
   await type(container.querySelector('[aria-label="Item 1 quantity"]'), '3')
   await type(container.querySelector('[aria-label="Item 1 unit price"]'), '0.1')
   assert.deepEqual(disk.proposals[id].versions[0].content.items, [{ description: 'Logo design', quantity: 3, unitPrice: 0.1 }])
+  assert.equal(disk.proposals[id].versions[0].content.timing, 'Five weeks', 'the kept edits save once the amount is fixed')
   assert.ok(!container.textContent.includes('Not saved yet.'))
+  await type(fieldByLabel('Timing'), 'Three weeks')
 
   // Explicit actions, each on the version shown.
   await press('Mark as offered')
@@ -149,6 +164,21 @@ try {
   assert.equal(Object.keys(disk.drafts).length, Object.keys(fixture.drafts).length + 1)
   assert.deepEqual(disk.sequence, fixture.sequence)
 
+  // Records saved with fractional numbers (here by the agent's command) open without warnings, save, and open the same way again.
+  const fractional = await globalThis.proposalTest.commands.createProposal({ details: { title: 'Fractions', customer: { name: 'Rata Ltd' }, currency: 'USD', paymentTermsDays: 30,
+    items: [{ description: 'Audit', quantity: 0.125, unitPrice: 1.005 }, { description: 'Tiny', quantity: 3, unitPrice: 0.0000001 }, { description: 'Half day', quantity: 1.5, unitPrice: 2.675 }] } })
+  for (const round of [1, 2]) {
+    await show(createElement(ProposalsView, { product, store: await repo.current(), disabled: false }))
+    await page(fractional.id)
+    assert.ok(!container.textContent.includes('Not saved yet.'), `round ${round}`)
+    assert.deepEqual([1, 2, 3].map(n => [container.querySelector(`[aria-label="Item ${n} quantity"]`).value, container.querySelector(`[aria-label="Item ${n} unit price"]`).value]), [['0.125', '1.005'], ['3', '0.0000001'], ['1.5', '2.675']])
+    assert.equal(button('Mark as offered').disabled, false)
+    await type(fieldByLabel('Timing'), `Round ${round}`)
+    assert.equal(disk.proposals[fractional.id].versions[0].content.timing, `Round ${round}`)
+    assert.deepEqual(disk.proposals[fractional.id].versions[0].content.items.map(i => [i.quantity, i.unitPrice]), [[0.125, 1.005], [3, 0.0000001], [1.5, 2.675]])
+  }
+  await press('Export HTML')
+  assert.ok(exported.at(-1).html.includes('Round 2'), 'export carries what is on screen')
   // Accepting an earlier version while a later draft exists: the page opens on the accepted version, the draft is read-only and cannot be offered.
   const early = await globalThis.proposalTest.commands.createProposal({ details: { title: 'Early', customer: { name: 'Totara Ltd' }, items: [{ description: 'Audit', quantity: 1, unitPrice: 100 }], currency: 'NZD' } })
   const e1 = early.latestVersionId
@@ -159,7 +189,7 @@ try {
   await page(early.id)
   await type(fieldByLabel('Timing'), 'Next month')
   const e2 = disk.proposals[early.id].versions[1].id
-  await act(async () => { [...container.querySelectorAll('[role="tab"]')].find(t => t.textContent.startsWith('v1')).click() })
+  await tab('v1')
   await press('Accepted')
   assert.equal(disk.proposals[early.id].acceptedVersionId, e1)
   await act(async () => { root.unmount() })
@@ -167,7 +197,7 @@ try {
   await act(async () => { reopened.render(createElement(ProposalPage, { product, store: await repo.current(), proposal: (await repo.current()).proposals[early.id], disabled: false })) })
   assert.equal(container.querySelector('[role="tab"][aria-selected="true"]').textContent, 'v1 · Accepted', 'a settled proposal opens on the accepted version')
   assert.ok(container.textContent.includes('Create invoice draft'))
-  await act(async () => { [...container.querySelectorAll('[role="tab"]')].find(t => t.textContent.startsWith('v2')).click() })
+  await tab('v2')
   assert.equal(fieldByLabel('Customer name').readOnly, true, 'the later draft is read-only')
   assert.ok(![...container.querySelectorAll('button')].some(b => b.textContent.includes('Mark as offered')))
   assert.ok(container.textContent.includes('was never offered'))
@@ -177,8 +207,9 @@ try {
   await act(async () => { listRoot.render(createElement(ProposalsView, { product, store: await repo.current(), disabled: false })) })
   assert.ok(container.textContent.includes('Kauri & Co') && container.textContent.includes('Accepted') && container.textContent.includes('Invoice draft made'))
   await act(async () => { listRoot.unmount() })
+  assert.equal(errors.length, 1, `only the refused export failed: ${errors.join(' | ')}`)
   console.error = originalError
-  console.log('Proposal screens: list, every form field saved by typing, offer, export, revise into a new version, accept and a single invoice draft, decimal commas and refused ambiguous amounts, a settled proposal opening on its accepted version, all through the shared proposal commands, passed.')
+  console.log('Proposal screens: list, every form field saved by typing, offer, export, revise into a new version, accept and a single invoice draft, decimal commas and refused ambiguous amounts that block export and keep edits, fractional records reopened cleanly, a settled proposal opening on its accepted version, all through the shared proposal commands, passed.')
 } finally {
   console.error = originalError
   await rm(dir, { recursive: true, force: true })
