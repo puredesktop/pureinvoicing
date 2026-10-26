@@ -20,6 +20,14 @@ function money(minor: bigint, precision: number): string {
   const text = String(minor).padStart(precision + 1, '0')
   return `${text.slice(0, -precision)}.${text.slice(-precision)}`
 }
+/** Minor-unit digits for a supported currency (JPY 0, USD 2, KWD 3); 2 when there is none. */
+export function currencyPrecision(currency: string | null): number {
+  return currency && supportedCurrencies.includes(currency) ? new Intl.NumberFormat('en', { style: 'currency', currency }).resolvedOptions().maximumFractionDigits! : 2
+}
+/** Quantity × unit price, exact, rounded half up once to the currency's precision; the amount as a decimal string. */
+export function lineAmount(quantity: number, unitPrice: number, precision: number): string {
+  return money(round(multiply(decimal(quantity), decimal(unitPrice)), precision), precision)
+}
 export function validDate(value: string | null): boolean {
   return !!value && /^\d{4}-\d{2}-\d{2}$/.test(value) &&
     !Number.isNaN(Date.parse(value)) && new Date(value).toISOString().slice(0, 10) === value
@@ -39,7 +47,7 @@ export function calculateInvoice(content: InvoiceContent, currencyReviewRequired
   }
   const currencyValid = !!content.currency && supportedCurrencies.includes(content.currency)
   if (!currencyValid) issue('currency', 'Select a supported currency.')
-  const precision = currencyValid ? new Intl.NumberFormat('en', { style: 'currency', currency: content.currency! }).resolvedOptions().maximumFractionDigits! : 2
+  const precision = currencyPrecision(content.currency)
   let subtotal = 0n, discount = 0n, net = 0n, tax = 0n
   const breakdown = new Map<number, bigint>()
   if (!content.lineItems.length) issue('lineItems', 'Add at least one line item.')

@@ -181,6 +181,10 @@ export function useInvoiceProduct(settings: AppSettings, store: InvoiceStore, re
     removeLibraryDocument: (documentId: string) => run(async () => { await invoiceCommands.removeLibraryDocument({ documentId }); setMessage('Taken out of the library. The copy it kept stays on disk.'); await navigation.updateNavigation({ destination: 'library', selectedLibraryId: null }) }),
     openLibraryFile: (documentId: string) => run(async () => { const f = await invoiceCommands.libraryDocumentPath({ documentId }); await openLinkedDocument(f.path, f.name) }),
     selectedContractorId: navigation.navigation.selectedContractorId ?? null,
+    selectedProposalId: navigation.navigation.selectedProposalId ?? null,
+    openProposal: (proposalId: string | null) => run(async () => { await persistEdits(); await navigation.updateNavigation({ destination: 'proposals', selectedProposalId: proposalId }) }),
+    /** A save while typing: no busy state, so the field keeps its focus; a failure shows in the desk's callout. */
+    quietly: (action: () => Promise<unknown>) => action().catch(error => { console.error('Background save failed', error); setError(error instanceof Error ? error.message : String(error)) }),
     openAgreement: (agreementId: string | null) => run(async () => { await persistEdits(); await navigation.updateNavigation({ destination: 'agreements', selectedAgreementId: agreementId }) }),
     openContractor: (contractorId: string | null) => run(async () => { await persistEdits(); await navigation.updateNavigation({ destination: 'contractors', selectedContractorId: contractorId }) }),
     /** Run an agreement or contractor action with the desk's busy state, error callout and toast. */
@@ -291,7 +295,7 @@ export function useInvoiceProduct(settings: AppSettings, store: InvoiceStore, re
       setConfirmation(null); setPreview(null)
     }),
     dirty: !!selected && !!edits[selected.id], busy, error: error || navigation.error?.message,
-    navigate: (destination: NavigationPreferences['destination']) => run(async () => { await persistEdits(); await navigation.updateNavigation({ destination, ...(destination === 'agreements' ? { selectedAgreementId: null } : {}) }) }),
+    navigate: (destination: NavigationPreferences['destination']) => run(async () => { await persistEdits(); await navigation.updateNavigation({ destination, ...(destination === 'agreements' ? { selectedAgreementId: null } : destination === 'proposals' ? { selectedProposalId: null } : {}) }) }),
     selectDraft: (id: string) => run(() => openInvoice(id)),
     createDraft: () => run(async () => {
       await persistEdits()

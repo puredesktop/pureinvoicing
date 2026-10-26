@@ -2348,5 +2348,361 @@ export const domainSchemas = {
       "documentId"
     ],
     "additionalProperties": false
+  },
+  "listProposals": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "status": {
+        "type": "string",
+        "enum": [
+          "all",
+          "draft",
+          "offered",
+          "accepted",
+          "declined"
+        ]
+      },
+      "clientId": {
+        "type": "string"
+      },
+      "query": {
+        "type": "string",
+        "description": "Words in the title or customer name."
+      }
+    }
+  },
+  "getProposal": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "proposalId"
+    ],
+    "properties": {
+      "proposalId": {
+        "type": "string",
+        "description": "The proposal's id (from listProposals or createProposal)."
+      },
+      "versionId": {
+        "type": "string",
+        "description": "A version to read; the latest when left out."
+      }
+    }
+  },
+  "createProposal": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "clientId": {
+        "type": "string",
+        "description": "A directory client to copy into the customer."
+      },
+      "details": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "A short name for the offer, e.g. 'Website refresh'. Becomes the invoice reference on conversion."
+          },
+          "enquiry": {
+            "type": "string",
+            "description": "What the customer asked for, in their or the person's words. Kept for the record; not printed on the offer."
+          },
+          "enquiryDate": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "description": "When the enquiry came in, YYYY-MM-DD."
+          },
+          "customer": {
+            "type": "object",
+            "additionalProperties": false,
+            "description": "Merged into the version's customer; only the fields given change.",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "address": {
+                "type": "string"
+              },
+              "contactName": {
+                "type": "string"
+              },
+              "email": {
+                "type": "string"
+              },
+              "phone": {
+                "type": "string"
+              },
+              "taxIdentifier": {
+                "type": "string"
+              }
+            }
+          },
+          "scope": {
+            "type": "string",
+            "description": "The work offered, in the person's words."
+          },
+          "deliverables": {
+            "type": "string",
+            "description": "What the customer receives."
+          },
+          "exclusions": {
+            "type": "string",
+            "description": "What is not included."
+          },
+          "timing": {
+            "type": "string",
+            "description": "When the work happens or is delivered."
+          },
+          "items": {
+            "type": "array",
+            "description": "The COMPLETE ordered list of priced items; it replaces the current items. Read getProposal first and send every item.",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "description",
+                "quantity",
+                "unitPrice"
+              ],
+              "properties": {
+                "description": {
+                  "type": "string"
+                },
+                "quantity": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "unitPrice": {
+                  "type": [
+                    "number",
+                    "null"
+                  ],
+                  "description": "Price per unit in the proposal's currency, as the person gave it. The app rounds the amounts; never do the arithmetic yourself."
+                }
+              }
+            }
+          },
+          "currency": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "ISO 4217 code, e.g. EUR. Changing it converts nothing."
+          },
+          "paymentTerms": {
+            "type": "string",
+            "description": "Payment terms in words, e.g. '50% on acceptance, the rest on delivery'. Printed on the offer and carried into the invoice notes."
+          },
+          "paymentTermsDays": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0,
+            "description": "Days after the invoice date the invoice is due; sets the due date on conversion."
+          }
+        }
+      }
+    }
+  },
+  "updateProposal": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "proposalId"
+    ],
+    "properties": {
+      "proposalId": {
+        "type": "string",
+        "description": "The proposal's id (from listProposals or createProposal)."
+      },
+      "clientId": {
+        "type": "string",
+        "description": "A directory client to copy into the customer."
+      },
+      "changes": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "A short name for the offer, e.g. 'Website refresh'. Becomes the invoice reference on conversion."
+          },
+          "enquiry": {
+            "type": "string",
+            "description": "What the customer asked for, in their or the person's words. Kept for the record; not printed on the offer."
+          },
+          "enquiryDate": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "description": "When the enquiry came in, YYYY-MM-DD."
+          },
+          "customer": {
+            "type": "object",
+            "additionalProperties": false,
+            "description": "Merged into the version's customer; only the fields given change.",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "address": {
+                "type": "string"
+              },
+              "contactName": {
+                "type": "string"
+              },
+              "email": {
+                "type": "string"
+              },
+              "phone": {
+                "type": "string"
+              },
+              "taxIdentifier": {
+                "type": "string"
+              }
+            }
+          },
+          "scope": {
+            "type": "string",
+            "description": "The work offered, in the person's words."
+          },
+          "deliverables": {
+            "type": "string",
+            "description": "What the customer receives."
+          },
+          "exclusions": {
+            "type": "string",
+            "description": "What is not included."
+          },
+          "timing": {
+            "type": "string",
+            "description": "When the work happens or is delivered."
+          },
+          "items": {
+            "type": "array",
+            "description": "The COMPLETE ordered list of priced items; it replaces the current items. Read getProposal first and send every item.",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "description",
+                "quantity",
+                "unitPrice"
+              ],
+              "properties": {
+                "description": {
+                  "type": "string"
+                },
+                "quantity": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "unitPrice": {
+                  "type": [
+                    "number",
+                    "null"
+                  ],
+                  "description": "Price per unit in the proposal's currency, as the person gave it. The app rounds the amounts; never do the arithmetic yourself."
+                }
+              }
+            }
+          },
+          "currency": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "ISO 4217 code, e.g. EUR. Changing it converts nothing."
+          },
+          "paymentTerms": {
+            "type": "string",
+            "description": "Payment terms in words, e.g. '50% on acceptance, the rest on delivery'. Printed on the offer and carried into the invoice notes."
+          },
+          "paymentTermsDays": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0,
+            "description": "Days after the invoice date the invoice is due; sets the due date on conversion."
+          }
+        }
+      }
+    }
+  },
+  "setProposalStatus": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "proposalId",
+      "versionId",
+      "status"
+    ],
+    "properties": {
+      "proposalId": {
+        "type": "string",
+        "description": "The proposal's id (from listProposals or createProposal)."
+      },
+      "versionId": {
+        "type": "string",
+        "description": "The exact version's id (from getProposal, versions)."
+      },
+      "status": {
+        "type": "string",
+        "enum": [
+          "offered",
+          "accepted",
+          "declined"
+        ]
+      }
+    }
+  },
+  "exportProposal": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "proposalId",
+      "versionId"
+    ],
+    "properties": {
+      "proposalId": {
+        "type": "string",
+        "description": "The proposal's id (from listProposals or createProposal)."
+      },
+      "versionId": {
+        "type": "string",
+        "description": "The exact version's id (from getProposal, versions)."
+      }
+    }
+  },
+  "convertProposalToInvoice": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "proposalId",
+      "versionId"
+    ],
+    "properties": {
+      "proposalId": {
+        "type": "string",
+        "description": "The proposal's id (from listProposals or createProposal)."
+      },
+      "versionId": {
+        "type": "string",
+        "description": "The accepted version's id (getProposal, acceptedVersionId)."
+      }
+    }
   }
 } as const

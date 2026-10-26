@@ -131,6 +131,20 @@ export function templateReply(t: Result) {
   }
 }
 
+const READ_PROPOSAL = 'Call getProposal with this id (and a versionId) for the full content of a version.'
+/** A proposal after a change: its standing, each version's status and total, the latest version's problems; never the wording. */
+export function proposalReply(p: Result) {
+  const version = p.version ?? {}
+  return {
+    id: p.id, status: p.status, title: version.content?.title ?? '', customer: version.content?.customer?.name ?? '',
+    latestVersionId: p.latestVersionId, acceptedVersionId: p.acceptedVersionId ?? null,
+    versions: (p.versions ?? []).map((v: Result) => ({ id: v.id, number: v.number, status: v.status, offeredAt: v.offeredAt, decidedAt: v.decidedAt, currency: v.currency, total: v.total })),
+    version: { id: version.id, number: version.number, status: version.status, revision: version.revision, itemCount: version.content?.items?.length ?? 0,
+      currency: version.calculation?.currency ?? null, total: version.calculation?.total ?? null, complete: version.calculation?.complete ?? false, problems: version.calculation?.diagnostics ?? [] },
+    invoice: p.invoice ?? null, saveStatus: p.saveStatus, read: READ_PROPOSAL,
+  }
+}
+
 /** Agent replies by tool name; a tool not listed replies with the command's own result. */
 export const agentReplies: Record<string, ReplyBuilder> = {
   createInvoiceDraft: draftReply,
@@ -148,6 +162,9 @@ export const agentReplies: Record<string, ReplyBuilder> = {
   /** Optional includeImages: false leaves the page images out (text, diagnostics and image paths stay). */
   getInvoicePreview: (result, args) => args.includeImages === false
     ? { ...result, pages: (result.pages ?? []).map(({ imageDataUrl: _image, ...page }: Result) => page) } : result,
+  createProposal: proposalReply,
+  updateProposal: proposalReply,
+  setProposalStatus: proposalReply,
   createAgreement: withOutline,
   createAgreementFromTemplate: withOutline,
   updateAgreement: withOutline,

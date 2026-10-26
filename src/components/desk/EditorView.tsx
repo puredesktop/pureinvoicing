@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import type { ClientDirectory } from '../../hooks/useClientDirectory'
 import type { InvoiceProduct } from '../../hooks/useInvoiceProduct'
 import { calculateInvoice } from '../../lib/invoices/calculations'
-import { supportedCurrencies } from '../../lib/invoices/defaults'
+import { COMMON_CURRENCIES, supportedCurrencies } from '../../lib/invoices/defaults'
 import { TERMS_PRESETS, termsLabel } from '../../lib/invoices/lifecycle'
 import { formatAmount, formatMoney, isZeroMoney } from '../../lib/invoices/money'
 import type { Diagnostic, InvoiceStore } from '../../lib/invoices/types'
@@ -16,8 +16,6 @@ import { PeopleLookupInput } from './PeopleLookupInput'
 import { Icon, Money } from './bits'
 import { agentRefs, invoiceRefs } from '../../lib/agentRefs'
 import { Area, Body, Btn, Callout, Chip, Dot, Field, Grid, Hint, Input, Main, Meta, Mono, Panel, Sec, SecHead, Select, Switch, TopBar } from './deskStyles'
-
-const COMMON_CURRENCIES = ['USD', 'EUR', 'GBP', 'NZD', 'AUD', 'CAD', 'CHF', 'JPY', 'SEK', 'NOK', 'DKK', 'INR', 'SGD', 'HKD', 'ZAR', 'BRL', 'MXN']
 
 /** A draft or a correction: the structured editor on the left, the pages as they will print on the right. */
 export function EditorView({ product: p, directory: d, store, disabled }: { product: InvoiceProduct; directory: ClientDirectory; store: InvoiceStore; disabled: boolean }): React.ReactElement | null {

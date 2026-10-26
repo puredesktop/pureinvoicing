@@ -89,6 +89,8 @@ export interface Draft {
   source?: SourceLink
   correctionOf?: string
   currencyReviewRequired: boolean
+  /** The accepted proposal version this draft was made from. */
+  proposalSource?: { proposalId: string; versionId: string }
 }
 export interface IssuedVersion {
   id: string
@@ -277,6 +279,66 @@ export interface LibraryDocument {
   addedAt: string
   updatedAt: string
 }
+/**
+ * Proposals: an enquiry answered with an offer. Each offer is a version; a
+ * version once offered keeps its content for good, edits after that make the
+ * next draft version, and acceptance names the exact version accepted.
+ */
+export type ProposalStatus = 'draft' | 'offered' | 'accepted' | 'declined'
+export interface ProposalCustomer {
+  name: string
+  address: string
+  contactName?: string
+  email?: string
+  phone?: string
+  taxIdentifier?: string
+}
+export interface ProposalItem { description: string; quantity: number | null; unitPrice: number | null }
+export interface ProposalContent {
+  title: string
+  /** What was asked for, in the person's words; kept for the record, not printed on the offer. */
+  enquiry: string
+  /** When the enquiry came in, YYYY-MM-DD. */
+  enquiryDate: string | null
+  customer: ProposalCustomer
+  /** The directory client the customer was copied from; editing the proposal never edits the client. */
+  clientId?: string
+  scope: string
+  deliverables: string
+  exclusions: string
+  timing: string
+  items: ProposalItem[]
+  currency: string | null
+  /** Payment terms in words, printed on the offer and carried into the invoice. */
+  paymentTerms: string
+  /** Days after the invoice date; sets the invoice's due date on conversion. */
+  paymentTermsDays: number | null
+}
+export interface ProposalVersion {
+  id: string
+  /** 1, 2, 3… in the order the versions were made. */
+  number: number
+  status: ProposalStatus
+  revision: number
+  content: ProposalContent
+  createdAt: string
+  updatedAt: string
+  /** The version this one was revised from. */
+  basedOnVersionId?: string
+  offeredAt?: string
+  decidedAt?: string
+}
+export interface Proposal {
+  id: string
+  versions: ProposalVersion[]
+  /** The exact offered version the customer accepted. */
+  acceptedVersionId?: string
+  /** The invoice made from the accepted version; a retry returns this same invoice. */
+  conversion?: { versionId: string; invoiceId: string; at: string }
+  history: { id: string; at: string; note: string; versionId?: string }[]
+  createdAt: string
+  updatedAt: string
+}
 
 export interface InvoiceStore {
   schemaVersion: 1
@@ -294,6 +356,8 @@ export interface InvoiceStore {
   templates?: Record<string, AgreementTemplate>
   /** Documents kept for invoicing (not the rendered-invoice cache, which is `documents`). */
   library?: Record<string, LibraryDocument>
+  /** Offers made in answer to enquiries; kept apart from invoices until one is explicitly converted. */
+  proposals?: Record<string, Proposal>
   /** Superseded by templates; kept so older workspaces still load. */
   agreementTemplates?: Partial<Record<AgreementKind, { heading: string; body: string }[]>>
 }
@@ -306,12 +370,13 @@ export interface ArchiveQuery {
 export interface ClientQuery { query?: string; clientId?: string; cursor?: string; limit?: number }
 export type DefaultSource = 'businessIdentity' | 'paymentInstructions' | 'template' | 'client'
 export interface NavigationPreferences {
-  destination: 'invoices' | 'agreements' | 'clients' | 'contractors' | 'library' | 'business'
+  destination: 'invoices' | 'proposals' | 'agreements' | 'clients' | 'contractors' | 'library' | 'business'
   archive: ArchiveQuery
   selectedInvoiceId: string | null
   selectedClientId?: string | null
   selectedAgreementId?: string | null
   selectedLibraryId?: string | null
   selectedContractorId?: string | null
+  selectedProposalId?: string | null
   scrollTop: number
 }

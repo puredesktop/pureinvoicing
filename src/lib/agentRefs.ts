@@ -43,6 +43,8 @@ export const clientRefs = (id: Ref): string[] => refsFor(id, 'clientId')
 export const contractorRefs = (id: Ref): string[] => refsFor(id, 'contractorId')
 /** An agreement is `agreementId`, and `parentId` to the SOWs and change orders made under it. */
 export const agreementRefs = (id: Ref): string[] => refsFor(id, 'agreementId', 'parentId')
+/** A proposal is `proposalId` to every proposal tool; each of its versions is `versionId`. */
+export const proposalRefs = (id: Ref): string[] => refsFor(id, 'proposalId')
 export const templateRefs = (id: Ref): string[] => refsFor(id, 'templateId')
 /** A library document (listLibrary, readLibraryDocument, updateLibraryDocument, removeLibraryDocument). */
 export const libraryRefs = (id: Ref): string[] => refsFor(id, 'documentId')

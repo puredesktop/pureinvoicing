@@ -27,7 +27,7 @@ try {
   }
   for (const file of ['agents/handlers/index', 'agents/replies', 'agents/validateDomainArguments', 'agents/domainSchemas',
     'components/desk/IssueSheet', 'components/desk/IssuedView', 'components/desk/PreviewPane', 'components/desk/bits', 'components/desk/deskStyles',
-    'lib/invoices/dates', 'components/desk/PaymentDialog', 'components/desk/Annotations']) {
+    'lib/invoices/dates', 'lib/agentRefs', 'components/desk/PaymentDialog', 'components/desk/Annotations']) {
     const extension = file.endsWith('deskStyles') || file.startsWith('agents') || file.startsWith('lib') ? 'ts' : 'tsx'
     const source = await readFile(`src/${file}.${extension}`, 'utf8')
     const code = ts.transpileModule(source, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext, jsx: ts.JsxEmit.ReactJSX } }).outputText

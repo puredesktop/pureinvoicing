@@ -17,6 +17,12 @@ An outgoing-invoice workspace for preparing drafts, issuing numbered invoice PDF
 2. Create a draft, add line items, and review dates, totals, tax, and payment details.
 3. Issue the invoice when ready, then record sending and payment status. Review the rendered PDF before sharing it.
 
+### Proposals
+
+**Proposals** holds enquiries and the offers made for them, apart from invoices. Note the enquiry, then fill in the customer (or copy a client), title, scope, deliverables, what is not included, timing, priced items, currency and payment terms. **Export HTML** saves the shown version as a standalone page to share; nothing is sent from the app.
+
+**Mark as offered** records that the customer has the version and fixes its content. Changing it afterwards with **Revise offer** starts the next version; the offered one stays as it was. Record the answer with **Accepted** or **Declined** on the exact version. On the accepted version, **Create invoice draft** makes an ordinary invoice draft with the same customer, items, prices, currency and payment terms; it takes the next invoice number only when issued, and pressing it again opens the same draft. Proposals never use invoice numbers.
+
 ## Development and loading
 
 We welcome **developers and vibecoders alike**. [Create a developer account on puredesktop.ai](https://puredesktop.ai/developers), then use Claude Code, Codex, your own editor, or purefactory to develop this app or create a new one.

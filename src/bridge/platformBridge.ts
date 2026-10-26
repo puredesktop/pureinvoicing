@@ -187,6 +187,16 @@ export async function exportInvoiceBytes(fileName: string, base64: string, befor
   return { cancelled: false as const, path }
 }
 
+/** Save a proposal exported as a standalone HTML page in a folder the person chooses. */
+export async function exportProposalHtmlFile(fileName: string, html: string) {
+  requireShell('Saving a proposal')
+  const parent = await savePlatformFolderDialog()
+  if (!parent) return { cancelled: true as const }
+  const path = `${parent}/${fileName}`
+  await writePlatformTextFile(path, html)
+  return { cancelled: false as const, path }
+}
+
 /** A person or organisation from PurePeople, copied into invoicing on selection. */
 export interface PeopleSuggestion {
   kind: 'person' | 'org'
