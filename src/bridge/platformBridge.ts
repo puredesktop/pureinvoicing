@@ -33,6 +33,7 @@ import {
 import { toggleAgentDrawer } from '@purescience/platform-ui/bridge/workspace'
 import { APP_SLUG } from '../constants'
 import { canUseInvoiceStorage } from './invoiceStorageCapabilities'
+import { saveInNewFolder } from '../lib/invoices/proposalHtml'
 import type { AppSettings } from '../types'
 import type {
   PlatformFileCreateFolderResult,
@@ -185,6 +186,16 @@ export async function exportInvoiceBytes(fileName: string, base64: string, befor
   const path = `${folder.path}/${fileName}`
   await writePlatformFileBinary(path, base64)
   return { cancelled: false as const, path }
+}
+
+/** Save a proposal exported as a standalone HTML page in a new folder inside the one the person chooses. */
+export async function exportProposalHtmlFile(fileName: string, html: string) {
+  requireShell('Saving a proposal')
+  return saveInNewFolder({
+    chooseFolder: () => savePlatformFolderDialog(),
+    createFolder: async (parent, name) => (await createPlatformFolder(parent, name)).path,
+    writeText: async (path, text) => { await writePlatformTextFile(path, text) },
+  }, fileName, html)
 }
 
 /** A person or organisation from PurePeople, copied into invoicing on selection. */

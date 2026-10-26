@@ -1,10 +1,11 @@
-import { isStandaloneDevMode, readInvoiceWorkspaceStorage, writeInvoiceWorkspaceStorage } from '../../bridge/platformBridge'
+import { exportProposalHtmlFile, isStandaloneDevMode, readInvoiceWorkspaceStorage, writeInvoiceWorkspaceStorage } from '../../bridge/platformBridge'
 import { createPresentationCommands } from './presentationCommands'
 import { createFinalizationCommands } from './finalization'
 import { createInvoiceCommands } from './commands'
 import { createImportCommands } from './importCommands'
 import { createLibraryCommands } from './libraryCommands'
 import { createAgreementCommands } from './agreementCommands'
+import { createProposalCommands } from './proposalCommands'
 import { InvoiceRepository } from './repository'
 // Standalone dev (the Vite page opened directly): the workspace lives in localStorage so the UI can be worked on without the shell. Rendering still needs the shell.
 const STANDALONE_KEY = 'puredesktop:invoicing:workspace'
@@ -17,6 +18,7 @@ const core = createInvoiceCommands(invoiceRepository)
 const presentation = createPresentationCommands(invoiceRepository)
 export const invoiceCommands = {
   ...core, ...presentation, ...createFinalizationCommands(invoiceRepository, presentation.exportInvoicePdf), ...createImportCommands(invoiceRepository), ...createAgreementCommands(invoiceRepository), ...createLibraryCommands(invoiceRepository),
+  ...createProposalCommands(invoiceRepository, exportProposalHtmlFile),
   setDefaultTemplate: (settings: Partial<import('./types').Presentation>) => presentation.updatePresentation({ target: { kind: 'defaultTemplate' }, settings }),
   setDraftPresentation: (draftId: string, settings: Partial<import('./types').Presentation>) => presentation.updatePresentation({ target: { kind: 'draft', draftId }, settings }),
   async getInvoice(args: Parameters<typeof core.getInvoice>[0]) {

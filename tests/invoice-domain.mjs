@@ -42,7 +42,7 @@ try {
   for (const [name, schema] of Object.entries(domainSchemas)) {
     const tool = manifest.app.agents.tools.find(tool => tool.name === name)
     assert.deepEqual(schema, tool.inputSchema)
-    assert.equal(tool.requiresApproval, !['getWorkspaceState', 'getInvoice', 'searchInvoices', 'searchClients', 'getInvoicePreview', 'prepareInvoiceFinalization', 'previewInvoiceImport', 'listAgreements', 'getAgreement', 'searchContractors', 'listAgreementTemplates', 'getAgreementTemplate', 'findAgreementSpecifics', 'previewAgreementFromTemplate', 'listLibrary', 'readLibraryDocument'].includes(name))
+    assert.equal(tool.requiresApproval, !['getWorkspaceState', 'getInvoice', 'searchInvoices', 'searchClients', 'getInvoicePreview', 'prepareInvoiceFinalization', 'previewInvoiceImport', 'listAgreements', 'getAgreement', 'searchContractors', 'listAgreementTemplates', 'getAgreementTemplate', 'findAgreementSpecifics', 'previewAgreementFromTemplate', 'listLibrary', 'readLibraryDocument', 'listProposals', 'getProposal'].includes(name))
   }
   assert.throws(() => validateDomainArguments('updateInvoiceDraft', { draftId: 'a', changes: { number: 4 } }))
   assert.throws(() => validateDomainArguments('setNextInvoiceNumber', { nextNumber: 4, unregisteredHistoryChecked: false }))

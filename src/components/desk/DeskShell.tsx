@@ -7,6 +7,7 @@ import type { useInvoiceWorkspace } from '../../hooks/useInvoiceWorkspace'
 import { WorkspaceSaveStatus } from '../WorkspaceSaveStatus'
 import { ArchiveView } from './ArchiveView'
 import { AgreementsView } from './agreements/AgreementsView'
+import { ProposalsView } from './proposals/ProposalsView'
 import { ContractorsView } from './agreements/ContractorsView'
 import { BusinessView } from './BusinessView'
 import { ClientsView } from './ClientsView'
@@ -60,6 +61,8 @@ export function DeskShell({ workspace: w, setup: s, product: p, directory: d, lo
       {p.error ? <div style={{ padding: '10px 18px 0' }}><Callout $tone="bad"><Icon.warn /><span><b>That did not go through.</b> {p.error} Your work is kept.</span></Callout></div> : null}
       {!loaded ? (
         <div style={{ display: 'flex', flex: 1, alignItems: 'center', justifyContent: 'center' }}><Meta>{w.storageUnavailable ? 'Invoice storage is unavailable in this session. Reopen PureInvoicing once PureDesktop has granted filesystem access.' : 'Loading your invoices…'}</Meta></div>
+      ) : p.destination === 'proposals' ? (
+        <ProposalsView product={p} store={w.value} disabled={disabled} />
       ) : p.destination === 'agreements' ? (
         <AgreementsView product={p} store={w.value} disabled={disabled} />
       ) : p.destination === 'contractors' ? (

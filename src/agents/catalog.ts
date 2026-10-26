@@ -62,7 +62,14 @@ export const APP_AGENT_TOOL_NAMES = [
   "readLibraryDocument",
   "addLibraryDocumentFromPath",
   "updateLibraryDocument",
-  "removeLibraryDocument"
+  "removeLibraryDocument",
+  "listProposals",
+  "getProposal",
+  "createProposal",
+  "updateProposal",
+  "setProposalStatus",
+  "exportProposal",
+  "convertProposalToInvoice"
 ] as const
 
 export const APP_AGENT_LOG_LABEL = "invoicing"

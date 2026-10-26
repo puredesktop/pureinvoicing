@@ -132,6 +132,7 @@ export function parseStore(value: unknown): InvoiceStore {
   }
   agreementsAndContractors(value)
   library(value)
+  proposals(value)
   return structuredClone(value) as unknown as InvoiceStore
 }
 const safeKey = (id: string) => !['__proto__', 'constructor', 'prototype'].includes(id)
@@ -148,6 +149,49 @@ function library(value: Record<string, unknown>): void {
     requireValue(typeof d.text === 'string', `library.${id}.text`)
     requireValue(LIBRARY_KINDS.includes(String(d.kind)), `library.${id}.kind`)
     optionalText(d.clientId, `library.${id}.clientId`); optionalText(d.notes, `library.${id}.notes`)
+  }
+}
+const PROPOSAL_STATUSES = ['draft', 'offered', 'accepted', 'declined']
+function proposals(value: Record<string, unknown>): void {
+  if (value.proposals === undefined) return
+  requireValue(object(value.proposals), 'proposals')
+  for (const [id, p] of Object.entries(value.proposals)) {
+    const path = `proposals.${id}`
+    requireValue(safeKey(id) && object(p) && p.id === id, path)
+    text(p.createdAt, `${path}.createdAt`); text(p.updatedAt, `${path}.updatedAt`)
+    requireValue(Array.isArray(p.versions) && p.versions.length > 0 && Array.isArray(p.history), path)
+    const ids = new Set<string>()
+    ;(p.versions as unknown[]).forEach((v, index) => {
+      const at = `${path}.versions.${index}`
+      requireValue(object(v) && typeof v.id === 'string' && !ids.has(v.id) && v.number === index + 1 && PROPOSAL_STATUSES.includes(String(v.status)), at)
+      ids.add(v.id as string)
+      requireValue(Number.isSafeInteger(v.revision) && (v.revision as number) >= 1, `${at}.revision`)
+      text(v.createdAt, `${at}.createdAt`); text(v.updatedAt, `${at}.updatedAt`)
+      for (const field of ['basedOnVersionId', 'offeredAt', 'decidedAt']) optionalText(v[field], `${at}.${field}`)
+      requireValue(v.status === 'draft' ? index === (p.versions as unknown[]).length - 1 : typeof v.offeredAt === 'string', `${at}.status`)
+      const c = v.content
+      requireValue(object(c), `${at}.content`)
+      for (const field of ['title', 'enquiry', 'scope', 'deliverables', 'exclusions', 'timing', 'paymentTerms']) text(c[field], `${at}.content.${field}`)
+      requireValue(c.enquiryDate === null || typeof c.enquiryDate === 'string', `${at}.content.enquiryDate`)
+      requireValue(c.currency === null || typeof c.currency === 'string', `${at}.content.currency`)
+      requireValue(c.paymentTermsDays === null || (Number.isInteger(c.paymentTermsDays) && (c.paymentTermsDays as number) >= 0), `${at}.content.paymentTermsDays`)
+      optionalText(c.clientId, `${at}.content.clientId`)
+      requireValue(object(c.customer), `${at}.content.customer`)
+      text(c.customer.name, `${at}.content.customer.name`); text(c.customer.address, `${at}.content.customer.address`)
+      for (const field of ['contactName', 'email', 'phone', 'taxIdentifier']) optionalText(c.customer[field], `${at}.content.customer.${field}`)
+      requireValue(Array.isArray(c.items), `${at}.content.items`)
+      ;(c.items as unknown[]).forEach((item, i) => {
+        requireValue(object(item), `${at}.content.items.${i}`); text(item.description, `${at}.content.items.${i}.description`)
+        for (const field of ['quantity', 'unitPrice']) requireValue(item[field] === null || finite(item[field]), `${at}.content.items.${i}.${field}`)
+      })
+    })
+    const accepted = (p.versions as { id: string; status: string }[]).filter(v => v.status === 'accepted')
+    requireValue(accepted.length <= 1 && (p.acceptedVersionId ?? null) === (accepted[0]?.id ?? null), `${path}.acceptedVersionId`)
+    if (p.conversion !== undefined) {
+      requireValue(object(p.conversion) && p.conversion.versionId === p.acceptedVersionId, `${path}.conversion`)
+      text(p.conversion.invoiceId, `${path}.conversion.invoiceId`); text(p.conversion.at, `${path}.conversion.at`)
+    }
+    for (const entry of p.history as unknown[]) { requireValue(object(entry), `${path}.history`); text(entry.id, 'history.id'); text(entry.at, 'history.at'); text(entry.note, 'history.note'); optionalText(entry.versionId, 'history.versionId') }
   }
 }
 function agreementsAndContractors(value: Record<string, unknown>): void {
@@ -263,18 +307,51 @@ export function assertForwardTransition(previous: InvoiceStore, next: InvoiceSto
     if (signed && (newer.status === 'draft' || newer.status === 'sent')) throw new Error('A signed agreement cannot go back to a draft.')
     if (agreement.status !== 'draft' && newer.status !== 'draft' && !agreement.registered && JSON.stringify(newer.sections) !== JSON.stringify(agreement.sections)) throw new Error('A sent agreement’s text is fixed.')
   }
+  assertProposalTransition(previous, next)
+}
+/**
+ * Proposals: an offered version is what the customer saw, so its content and
+ * offer date never change; versions are only added; a decision (accepted or
+ * declined) is final; the accepted version and the invoice made from it stay
+ * linked, unless that invoice draft was discarded.
+ */
+export function assertProposalTransition(previous: InvoiceStore, next: InvoiceStore): void {
+  const decided = ['accepted', 'declined']
+  for (const proposal of Object.values(previous.proposals ?? {})) {
+    const newer = next.proposals?.[proposal.id]
+    if (!newer) {
+      if (proposal.versions.some(v => v.status !== 'draft')) throw new Error('A proposal that was offered cannot be removed.')
+      continue
+    }
+    if (newer.versions.length < proposal.versions.length || proposal.versions.some((v, i) => newer.versions[i]?.id !== v.id)) throw new Error('Proposal versions are kept; none can be removed or reordered.')
+    proposal.versions.forEach((version, i) => {
+      const later = newer.versions[i]
+      if (version.status === 'draft') return
+      if (JSON.stringify(later.content) !== JSON.stringify(version.content) || later.offeredAt !== version.offeredAt) throw new Error(`Version ${version.number} was offered; its content is fixed. Edit the proposal to start the next version.`)
+      if (later.status === 'draft' || (decided.includes(version.status) && later.status !== version.status)) throw new Error(`Version ${version.number} is ${version.status}; that cannot be undone.`)
+    })
+    if (proposal.acceptedVersionId && newer.acceptedVersionId !== proposal.acceptedVersionId) throw new Error('The accepted version of a proposal is fixed.')
+    if (proposal.acceptedVersionId && (newer.versions.length !== proposal.versions.length || newer.versions.some((v, i) => v.status !== proposal.versions[i].status))) {
+      throw new Error('An accepted proposal is settled: no versions are added and none changes status.')
+    }
+    if (proposal.conversion && JSON.stringify(newer.conversion) !== JSON.stringify(proposal.conversion)) {
+      const id = proposal.conversion.invoiceId
+      if (Object.hasOwn(next.drafts, id) || Object.hasOwn(next.invoices, id) || newer.conversion?.versionId !== proposal.conversion.versionId) throw new Error('The invoice made from an accepted proposal stays linked to it.')
+    }
+  }
 }
 export function parseNavigation(value: Record<string, unknown>): NavigationPreferences {
   const nav = value.invoiceNavigation
   if (!object(nav)) return structuredClone(defaultNavigation)
   const archive = object(nav.archive) ? nav.archive : {}
   return {
-    destination: ['agreements', 'clients', 'contractors', 'library', 'business'].includes(String(nav.destination)) ? nav.destination as NavigationPreferences['destination'] : 'invoices',
+    destination: ['proposals', 'agreements', 'clients', 'contractors', 'library', 'business'].includes(String(nav.destination)) ? nav.destination as NavigationPreferences['destination'] : 'invoices',
     selectedInvoiceId: typeof nav.selectedInvoiceId === 'string' ? nav.selectedInvoiceId : null,
     selectedClientId: typeof nav.selectedClientId === 'string' ? nav.selectedClientId : null,
     selectedAgreementId: typeof nav.selectedAgreementId === 'string' ? nav.selectedAgreementId : null,
     selectedLibraryId: typeof nav.selectedLibraryId === 'string' ? nav.selectedLibraryId : null,
     selectedContractorId: typeof nav.selectedContractorId === 'string' ? nav.selectedContractorId : null,
+    selectedProposalId: typeof nav.selectedProposalId === 'string' ? nav.selectedProposalId : null,
     scrollTop: typeof nav.scrollTop === 'number' && Number.isFinite(nav.scrollTop) && nav.scrollTop >= 0 ? nav.scrollTop : 0,
     archive: {
       query: typeof archive.query === 'string' ? archive.query : undefined,

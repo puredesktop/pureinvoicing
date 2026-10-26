@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "business": {
+    "name": "Pure Science Ltd",
+    "address": "1 Harbour Lane\nWellington 6011",
+    "email": "accounts@example.test",
+    "defaultPaymentInstructions": "Bank transfer to 12-3456-7890123-00",
+    "defaultTermsDays": 14
+  },
+  "template": {
+    "logoAssetId": null, "logoWidthMm": 35, "logoPlacement": "left", "letterheadText": "", "letterheadAlignment": "left", "letterheadTextSizePt": 12,
+    "footerText": "", "footerAlignment": "left", "footerTextSizePt": 9, "typeStyle": "sans", "bodyTextSizePt": 11, "lineSpacing": 1.4,
+    "sectionSpacingMm": 6, "accentColor": "#284B63", "pageSize": "A4", "marginsMm": { "top": 18, "right": 18, "bottom": 18, "left": 18 }, "showPageNumbers": true
+  },
+  "clients": {
+    "client-harbour": {
+      "id": "client-harbour", "name": "Harbour Trust", "billingAddress": "22 Quay Street\nAuckland 1010", "contactName": "Mere Tane",
+      "email": "mere@harbour.example", "taxIdentifier": "NZ-123-456", "termsDays": 20, "currency": "NZD", "updatedAt": "2026-03-01T09:00:00.000Z"
+    }
+  },
+  "drafts": {
+    "draft-open": {
+      "id": "draft-open", "revision": 3, "createdAt": "2026-10-01T09:00:00.000Z", "updatedAt": "2026-10-02T09:00:00.000Z", "currencyReviewRequired": false,
+      "content": {
+        "sender": { "name": "Pure Science Ltd", "address": "1 Harbour Lane\nWellington 6011" },
+        "recipient": { "name": "Harbour Trust", "address": "22 Quay Street\nAuckland 1010" },
+        "clientId": "client-harbour", "invoiceDate": "2026-10-01", "dueDate": "2026-10-21", "termsDays": 20, "reference": "October support",
+        "currency": "NZD", "lineItems": [{ "description": "Support hours", "quantity": 4, "unitPrice": 150 }], "notes": "", "paymentInstructions": "Bank transfer",
+        "presentation": {
+          "logoAssetId": null, "logoWidthMm": 35, "logoPlacement": "left", "letterheadText": "", "letterheadAlignment": "left", "letterheadTextSizePt": 12,
+          "footerText": "", "footerAlignment": "left", "footerTextSizePt": 9, "typeStyle": "sans", "bodyTextSizePt": 11, "lineSpacing": 1.4,
+          "sectionSpacingMm": 6, "accentColor": "#284B63", "pageSize": "A4", "marginsMm": { "top": 18, "right": 18, "bottom": 18, "left": 18 }, "showPageNumbers": true
+        }
+      }
+    }
+  },
+  "invoices": {
+    "invoice-six": {
+      "id": "invoice-six", "number": 6, "numberText": "PS-2026-006", "historical": false, "createdAt": "2026-09-01T09:00:00.000Z", "updatedAt": "2026-09-03T09:00:00.000Z",
+      "currentVersionId": "invoice-six-v1",
+      "marks": { "sentAt": "2026-09-02", "sentTo": "mere@harbour.example" },
+      "versions": [{
+        "id": "invoice-six-v1", "issuedAt": "2026-09-01T09:00:00.000Z",
+        "content": {
+          "sender": { "name": "Pure Science Ltd", "address": "1 Harbour Lane\nWellington 6011" },
+          "recipient": { "name": "Harbour Trust", "address": "22 Quay Street\nAuckland 1010" },
+          "clientId": "client-harbour", "invoiceDate": "2026-09-01", "dueDate": "2026-09-21", "termsDays": 20, "reference": "Workshop",
+          "currency": "NZD", "lineItems": [{ "description": "Workshop day", "quantity": 1, "unitPrice": 2400, "taxPercent": 15 }], "notes": "", "paymentInstructions": "Bank transfer",
+          "presentation": {
+            "logoAssetId": null, "logoWidthMm": 35, "logoPlacement": "left", "letterheadText": "", "letterheadAlignment": "left", "letterheadTextSizePt": 12,
+            "footerText": "", "footerAlignment": "left", "footerTextSizePt": 9, "typeStyle": "sans", "bodyTextSizePt": 11, "lineSpacing": 1.4,
+            "sectionSpacingMm": 6, "accentColor": "#284B63", "pageSize": "A4", "marginsMm": { "top": 18, "right": 18, "bottom": 18, "left": 18 }, "showPageNumbers": true
+          }
+        }
+      }],
+      "history": [{ "id": "h1", "at": "2026-09-01T09:00:00.000Z", "kind": "issued", "versionId": "invoice-six-v1" }, { "id": "h2", "at": "2026-09-02T09:00:00.000Z", "kind": "sent" }]
+    }
+  },
+  "sequence": {
+    "verified": true, "format": { "pattern": "PS-{YYYY}-{NNN}" }, "nextNumber": 7, "reservedNumbers": [6],
+    "history": [{ "at": "2026-01-01T00:00:00.000Z", "from": 1, "to": 6, "kind": "configured" }, { "at": "2026-09-01T09:00:00.000Z", "from": 6, "to": 7, "kind": "reserved" }]
+  },
+  "assets": {}
+}

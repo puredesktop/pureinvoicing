@@ -88,4 +88,11 @@ export const appAgentHandlers = {
   "addAgreementNote": domainTool("addAgreementNote", invoiceCommands.addAgreementNote as (args: never) => Promise<unknown>),
   "updateAgreementNote": domainTool("updateAgreementNote", invoiceCommands.updateAgreementNote as (args: never) => Promise<unknown>),
   "exportAgreementPdf": domainTool("exportAgreementPdf", invoiceCommands.exportAgreementPdf as (args: never) => Promise<unknown>),
+  "listProposals": domainTool("listProposals", invoiceCommands.listProposals as (args: never) => Promise<unknown>),
+  "getProposal": domainTool("getProposal", invoiceCommands.getProposal as (args: never) => Promise<unknown>),
+  "createProposal": domainTool("createProposal", invoiceCommands.createProposal as (args: never) => Promise<unknown>),
+  "updateProposal": domainTool("updateProposal", invoiceCommands.updateProposal as (args: never) => Promise<unknown>),
+  "setProposalStatus": domainTool("setProposalStatus", invoiceCommands.setProposalStatus as (args: never) => Promise<unknown>),
+  "exportProposal": domainTool("exportProposal", invoiceCommands.exportProposal as (args: never) => Promise<unknown>),
+  "convertProposalToInvoice": domainTool("convertProposalToInvoice", invoiceCommands.convertProposalToInvoice as (args: never) => Promise<unknown>),
 } satisfies Record<string, AgentToolHandler>

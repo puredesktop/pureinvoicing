@@ -19,3 +19,5 @@ export function localToday(date = new Date()): string {
 }
 export function newId(): string { return crypto.randomUUID() }
 export const supportedCurrencies = Intl.supportedValuesOf('currency')
+/** The currencies offered first in pickers; any supported code can still be chosen. */
+export const COMMON_CURRENCIES: string[] = ['USD', 'EUR', 'GBP', 'NZD', 'AUD', 'CAD', 'CHF', 'JPY', 'SEK', 'NOK', 'DKK', 'INR', 'SGD', 'HKD', 'ZAR', 'BRL', 'MXN']
