@@ -218,6 +218,21 @@ it goes, the format. A document with no readable text (a scan) says so; the
 person opens it. `addLibraryDocumentFromPath` keeps a file the person named;
 `updateLibraryDocument` and `removeLibraryDocument` only when asked.
 
+## The money share (Executive app)
+
+Plain code, no tool and no model. When `.appdata/executive/money/share.json`
+(`{ "v": 1 }`) exists in the workspace, the app writes
+`.appdata/executive/money/invoicing.json` for the organisation's Executive
+app: `owedToUs` (issued, unpaid; `daysOverdue` from the due date), `drafts`
+(new invoice drafts; corrections are left out), `paid` (paid mark within 90
+days, `paidOn` is that mark), `agreements` (client agreements sent, signed,
+or complete with something left to invoice, each with its `nextMilestone`).
+Amounts are plain numbers in the invoice's or agreement's own currency. The
+file is rewritten whole on open and after every saved change
+(`src/lib/invoices/moneyShare.ts`, wired in `src/hooks/useMoneyShare.ts`). It
+is read-only for everyone: never edit it, and never treat it as the record;
+the store is. Format: ps-suite#1013, file formats §2b.
+
 ## Task to tool
 
 | The person wants | Use |
