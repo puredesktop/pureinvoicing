@@ -47,6 +47,10 @@ The app exposes 59 tools, including `getWorkspaceState`, `searchInvoices`, `getI
 
 The app retains issued invoice versions and PDFs, client records, agreements, and sent/paid marks. Bulk import uses the `pure-invoicing/1` JSON format with referenced PDFs.
 
+### Sharing with the Executive app
+
+When your organisation's Executive app asks for it, PureInvoicing keeps a short read-out of the money for its CFO: what clients owe you and how late it is, your invoice drafts, invoices paid in the last 90 days, and each agreement's next milestone. It is written only when the Executive app has left `.appdata/executive/money/share.json` in this workspace, and it goes to `.appdata/executive/money/invoicing.json` beside it, rewritten whole when the app opens and after each saved change. It is a copy for reading: nothing reads it back into your invoices, and nothing in it can change them. Delete `share.json` and the read-out stops being updated.
+
 ## Develop and customize
 
 We welcome **developers and vibecoders alike**. Fork pureinvoicing, add a feature, or use what you learn to build a new app.

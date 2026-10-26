@@ -34,6 +34,7 @@ import { toggleAgentDrawer } from '@purescience/platform-ui/bridge/workspace'
 import { APP_SLUG } from '../constants'
 import { canUseInvoiceStorage } from './invoiceStorageCapabilities'
 import { saveInNewFolder } from '../lib/invoices/proposalHtml'
+import { MONEY_SHARE_FILE, MONEY_SHARE_FOLDER, MONEY_SHARE_REQUEST } from '../lib/invoices/moneyShare'
 import type { AppSettings } from '../types'
 import type {
   PlatformFileCreateFolderResult,
@@ -290,4 +291,25 @@ export async function askDrawer(content: string, appSlug = 'invoicing'): Promise
     console.error('Could not hand the request to the assistant', error)
     return false
   }
+}
+
+// The money share for the organisation's Executive app: its folder sits in this
+// workspace's `.appdata`, beside the invoice store. Read-only for the books.
+let moneyShareFolder: Promise<string> | null = null
+function executiveMoneyFolder(): Promise<string> {
+  moneyShareFolder ??= readInvoiceWorkspaceStorage().then(storage => {
+    if (!storage.path) throw new Error('The workspace folder is not known yet.')
+    return `${storage.path.slice(0, storage.path.lastIndexOf('/'))}/${MONEY_SHARE_FOLDER}`
+  }).catch(error => { moneyShareFolder = null; throw error })
+  return moneyShareFolder
+}
+/** The Executive app's share request, or null when it has not asked (no file) or outside the shell. */
+export async function readMoneyShareRequest(): Promise<string | null> {
+  if (isStandaloneDevMode()) return null
+  const folder = await executiveMoneyFolder()
+  try { return await readPlatformTextFile(`${folder}/${MONEY_SHARE_REQUEST}`) } catch { return null }
+}
+/** Replace invoicing.json whole; the shell writes through a temporary file and a rename. */
+export async function writeMoneyShareFile(text: string): Promise<void> {
+  await writePlatformTextFile(`${await executiveMoneyFolder()}/${MONEY_SHARE_FILE}`, text)
 }
