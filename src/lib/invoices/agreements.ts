@@ -35,7 +35,7 @@ export const SKELETONS: Record<AgreementKind, { heading: string; body: string }[
   nda: [s('Purpose', '[Why information is being shared]'), s('Confidential information', '[What counts]'), s('Obligations', '[How it is protected and used]'),
     s('Exclusions', '[What is not confidential]'), s('Term', '[How long the obligations last]'), s('General', '[Governing law, return of materials]')],
   contractor: [s('Services', '[What the contractor will do]'), s('Term', '[Start and end]'), s('Fees and invoicing', '[Rate, monthly cap, invoice timing and payment days]'),
-    s('Work product and intellectual property', '[Assignment of work product to Pure Science]'), s('Confidentiality', '[Including client material]'),
+    s('Work product and intellectual property', '[Assignment of work product to your business]'), s('Confidentiality', '[Including client material]'),
     s('Independent contractor', '[Own tools, own taxes, no employment]'), s('Termination', '[Notice either side gives]'), s('General', '[Governing law, notices]')],
 }
 

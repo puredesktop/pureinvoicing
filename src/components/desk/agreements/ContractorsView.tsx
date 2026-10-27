@@ -13,7 +13,7 @@ import { NewAgreementSheet, type NewAgreementPreset } from './NewAgreementSheet'
 
 type Details = Omit<Contractor, 'id' | 'updatedAt' | 'documents'>
 
-/** People and firms who work for Pure Science: their details, their agreements, and what they have billed. */
+/** People and firms who work for your business: their details, their agreements, and what they have billed. */
 export function ContractorsView({ product: p, store, disabled }: { product: InvoiceProduct; store: InvoiceStore; disabled: boolean }): React.ReactElement {
   const contractors = Object.values(store.contractors ?? {}).sort((a, b) => a.name.localeCompare(b.name))
   const [query, setQuery] = useState('')
@@ -112,7 +112,7 @@ export function ContractorsView({ product: p, store, disabled }: { product: Invo
           </>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, padding: '80px 20px', textAlign: 'center' }}>
-            <div style={{ fontSize: 17, fontWeight: 600 }}>Who works for Pure Science?</div>
+            <div style={{ fontSize: 17, fontWeight: 600 }}>Who works for your business?</div>
             <Meta style={{ maxWidth: 440 }}>Add the people and firms you engage. Each gets an agreement with a rate and a cap, and their bills are checked against it.</Meta>
             <Btn $acc disabled={disabled} onClick={() => setEditing({ id: null, details: { name: '' } })}><Icon.plus />Add a contractor</Btn>
           </div>

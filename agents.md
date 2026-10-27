@@ -138,8 +138,8 @@ Imported invoices are historical and immutable: get the counters right.
 ## Agreements and contractors
 
 Agreements are the other half of billing. **Client** agreements (MSA, SOW,
-change order, NDA) are work Pure Science does and invoices; **contractor**
-agreements are work someone does for Pure Science and bills. Rules:
+change order, NDA) are work your business does and invoices; **contractor**
+agreements are work someone does for your business and bills. Rules:
 
 - The wording is the person's. Skeletons carry headings and `[bracketed]`
   prompts only. When you draft a section (`editAgreementSection`), work from
