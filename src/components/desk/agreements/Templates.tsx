@@ -40,7 +40,7 @@ export function TemplatesLibrary({ product: p, store, disabled, onUse, onEdit, o
         const missing = needle ? [] : kinds.filter(kind => !mine.some(t => t.kind === kind))
         return (
           <Fragment key={direction}>
-            <Kicker style={{ marginTop: 6 }}>{direction === 'client' ? 'For clients · Pure Science does the work' : 'For contractors · they do work for Pure Science'}</Kicker>
+            <Kicker style={{ marginTop: 6 }}>{direction === 'client' ? 'For clients · your business does the work' : 'For contractors · they do work for your business'}</Kicker>
             <Grid>
               {mine.map(t => {
                 const counts = templateCounts(t), problems = templateProblems(t)

@@ -159,7 +159,7 @@ export interface PublicationReceipt {
 }
 /** Agreements: master services agreements, statements of work, change orders, NDAs and contractor agreements. */
 export type AgreementKind = 'msa' | 'sow' | 'change-order' | 'nda' | 'contractor'
-/** client: Pure Science does the work and invoices; contractor: someone does work for Pure Science and bills it. */
+/** client: your business does the work and invoices; contractor: someone does work for your business and bills it. */
 export type AgreementDirection = 'client' | 'contractor'
 export type AgreementStatus = 'draft' | 'sent' | 'signed' | 'complete' | 'ended'
 export interface AgreementSection { id: string; heading: string; body: string }
@@ -243,7 +243,7 @@ export interface AgreementTemplate {
   createdAt: string
   updatedAt: string
 }
-/** Someone who does work for Pure Science. */
+/** Someone who does work for your business. */
 export interface Contractor {
   id: string
   name: string

@@ -1151,7 +1151,7 @@ export const domainSchemas = {
           "client",
           "contractor"
         ],
-        "description": "client: Pure Science does the work and invoices. contractor: someone works for Pure Science and bills it."
+        "description": "client: your business does the work and invoices. contractor: someone works for your business and bills it."
       },
       "clientId": {
         "type": "string"

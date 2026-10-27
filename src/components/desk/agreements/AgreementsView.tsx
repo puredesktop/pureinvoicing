@@ -90,7 +90,7 @@ export function AgreementsView({ product: p, store, disabled }: { product: Invoi
                 <thead><tr><th style={{ width: 150 }}>Number</th><th>Agreement</th><th className="c-issued" style={{ width: 110 }}>Signed</th><th className="num" style={{ width: 120 }}>Value</th><th style={{ width: 210 }}>Billed against it</th><th style={{ width: 170 }}>Status</th></tr></thead>
                 <tbody>
                   {groups.map(group => [
-                    <tr key={`${group.direction}-head`} style={{ cursor: 'default' }}><td colSpan={6} style={{ background: 'var(--d-well)', padding: '9px 12px 6px' }}><Kicker>{group.direction === 'client' ? 'With clients · Pure Science does the work' : 'With contractors · they do work for Pure Science'}</Kicker></td></tr>,
+                    <tr key={`${group.direction}-head`} style={{ cursor: 'default' }}><td colSpan={6} style={{ background: 'var(--d-well)', padding: '9px 12px 6px' }}><Kicker>{group.direction === 'client' ? 'With clients · your business does the work' : 'With contractors · they do work for your business'}</Kicker></td></tr>,
                     ...group.rows.map(r => (
                       <tr key={r.id} {...agentRefs(`${r.numberText ?? 'Draft'} · ${r.title}`, agreementRefs(r.id))} onClick={() => p.openAgreement(r.id)}>
                         <td><Mono style={{ whiteSpace: 'nowrap', color: r.numberText ? undefined : 'var(--d-muted)' }}>{r.numberText ?? 'Draft'}</Mono><Hint style={{ display: 'block' }}>{KIND_LABEL[r.kind]}</Hint></td>

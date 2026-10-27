@@ -100,7 +100,7 @@ export function NewAgreementSheet({ product: p, store, preset, disabled, onClose
         </div>
         <div style={{ padding: '16px 22px', display: 'flex', flexDirection: 'column', gap: 14, overflow: 'auto', minHeight: 0 }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 10 }}>
-            <Choice big on={direction === 'client'} onClick={() => setDirection('client')} title="We do it, for a client" note="Pure Science delivers and invoices. Milestones become invoice drafts when they fall due." />
+            <Choice big on={direction === 'client'} onClick={() => setDirection('client')} title="We do it, for a client" note="your business delivers and invoices. Milestones become invoice drafts when they fall due." />
             <Choice big on={direction === 'contractor'} onClick={() => setDirection('contractor')} title="A contractor does it, for us" note="We engage and pay. Their bills are checked against the rate and cap agreed here." />
           </div>
           <Kicker>Kind of agreement</Kicker>

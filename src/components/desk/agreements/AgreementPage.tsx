@@ -84,7 +84,7 @@ export function AgreementPage({ product: p, store, agreement: a, disabled }: { p
           <Paper>
             <div className="letterhead"><span className="kind">{KIND_LABEL[a.kind]}</span><span style={{ flex: 1 }} /><Mono>{a.numberText ?? 'Draft'}</Mono></div>
             {draft ? <LiveInput className="title" aria-label="Title" value={a.title} disabled={disabled} onCommit={title => { if (title.trim() && title !== a.title) void p.act(() => invoiceCommands.updateAgreement({ agreementId: a.id, changes: { title } })) }} /> : <h1 className="title">{a.title}</h1>}
-            <p className="between">Between <b>{store.business.name || 'Pure Science'}</b> and <b>{d.party || '[party]'}</b>{d.parent ? <>, {d.parent.kind === 'msa' ? 'under' : 'amending'} {d.parent.title}{d.parent.numberText ? ` (${d.parent.numberText})` : ''}</> : null}{(d.parent ? d.parent.numberText ? ')' : d.parent.title : d.party).endsWith('.') ? '' : '.'}</p>
+            <p className="between">Between <b>{store.business.name || 'your business'}</b> and <b>{d.party || '[party]'}</b>{d.parent ? <>, {d.parent.kind === 'msa' ? 'under' : 'amending'} {d.parent.title}{d.parent.numberText ? ` (${d.parent.numberText})` : ''}</> : null}{(d.parent ? d.parent.numberText ? ')' : d.parent.title : d.party).endsWith('.') ? '' : '.'}</p>
             {a.registered && !a.sections.length ? (
               <div className="registered">
                 <b>Signed elsewhere{a.signedAt ? ` on ${shortDate(a.signedAt)}` : ''}.</b> Its text is the signed document; this page keeps its terms, milestones and the invoices billed against it.
@@ -114,7 +114,7 @@ export function AgreementPage({ product: p, store, agreement: a, disabled }: { p
             <div className="signatures">
               {(['us', 'them'] as const).map(party => {
                 const signed = a.signatures.find(s => s.party === party)
-                return <div key={party}><Kicker>For {party === 'us' ? store.business.name || 'Pure Science' : d.party || 'the other party'}</Kicker><div className="line">{signed ? signed.name : ''}</div><Meta>{signed ? `Signed ${shortDate(signed.at)}` : 'Name, title, date'}</Meta></div>
+                return <div key={party}><Kicker>For {party === 'us' ? store.business.name || 'your business' : d.party || 'the other party'}</Kicker><div className="line">{signed ? signed.name : ''}</div><Meta>{signed ? `Signed ${shortDate(signed.at)}` : 'Name, title, date'}</Meta></div>
               })}
             </div>
           </Paper>
@@ -373,7 +373,7 @@ function SignDialog({ p, a, store, party, disabled, onClose }: { p: InvoiceProdu
         <form onSubmit={event => { event.preventDefault(); if (!ok) return; void p.act(() => invoiceCommands.markAgreementSigned({ agreementId: a.id, ours, theirs, ...(path ? { signedPdfPath: path } : {}) }), 'Signed. The agreement is active.'); onClose() }}>
           <div style={{ padding: '18px 22px 14px', borderBottom: '1px solid var(--d-line)' }}><Kicker>Record signatures</Kicker><div style={{ fontSize: 18, fontWeight: 600, marginTop: 2 }}>{a.title}</div><Meta>{a.numberText ?? 'Numbered when recorded'} · with {party}</Meta></div>
           <div style={{ padding: '16px 22px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {([['For ' + (store.business.name || 'Pure Science'), ours, setOurs], ['For ' + party, theirs, setTheirs]] as const).map(([label, value, set]) => (
+            {([['For ' + (store.business.name || 'your business'), ours, setOurs], ['For ' + party, theirs, setTheirs]] as const).map(([label, value, set]) => (
               <div key={label} style={{ display: 'grid', gridTemplateColumns: '1fr 160px', gap: 10 }}>
                 <Field><span>{label}: who signed</span><Input value={value.name} onChange={event => set({ ...value, name: event.target.value })} /></Field>
                 <Field><span>On</span><Input type="date" max={localToday()} value={value.at} onChange={event => set({ ...value, at: event.target.value })} /></Field>
