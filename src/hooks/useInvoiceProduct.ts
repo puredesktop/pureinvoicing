@@ -12,7 +12,8 @@ import type { MarkRequest } from '../lib/invoices/lifecycle'
 import { chooseDocumentFile, chooseImportFile, openLinkedDocument, toggleAgentDrawer } from '../bridge/platformBridge'
 import type { ImportPreview, ImportSource } from '../lib/invoices/importCommands'
 import { useInvoiceNavigation } from './useInvoiceNavigation'
-export function useInvoiceProduct(settings: AppSettings, store: InvoiceStore, ready: boolean) {
+/** With previewsPaused (the compact view, which shows no pages) nothing renders pages until it is lifted. */
+export function useInvoiceProduct(settings: AppSettings, store: InvoiceStore, ready: boolean, previewsPaused = false) {
   const navigation = useInvoiceNavigation(settings, ready)
   const [busy, setBusy] = useState(false), [error, setError] = useState('')
   const [edits, setEdits] = useState<Record<string, InvoiceContent>>({})
@@ -64,7 +65,7 @@ export function useInvoiceProduct(settings: AppSettings, store: InvoiceStore, re
   const currentPreviewKey = JSON.stringify([selected?.id, content, selected?.currencyReviewRequired, store.sequence, issued?.currentVersionId, version?.id])
   // An issued invoice renders its own pages when opened (a draft's render below is debounced behind its edits).
   useEffect(() => {
-    if (!issued || !version || selected || preview || busy || error) return
+    if (previewsPaused || !issued || !version || selected || preview || busy || error) return
     let active = true
     invoiceCommands.getInvoicePreview({ target: { invoiceId: issued.id, versionId: version.id } }).then(result => {
       if (active) { setPreview(result); setPreviewKey(currentPreviewKey) }
@@ -73,7 +74,7 @@ export function useInvoiceProduct(settings: AppSettings, store: InvoiceStore, re
       if (active) setError(error instanceof Error ? error.message : String(error))
     })
     return () => { active = false }
-  }, [issued?.id, version?.id, !!selected, !!preview, busy, error])
+  }, [issued?.id, version?.id, !!selected, !!preview, busy, error, previewsPaused])
   async function persistEdits() {
     if (saving.current) await saving.current
     if (!selected || !edits[selected.id]) return
@@ -100,7 +101,7 @@ export function useInvoiceProduct(settings: AppSettings, store: InvoiceStore, re
     return () => window.clearTimeout(timer)
   }, [edits, selected?.id, busy, error])
   useEffect(() => {
-    if (!selected || edits[selected.id] || busy || error) return
+    if (previewsPaused || !selected || edits[selected.id] || busy || error) return
     let active = true
     const timer = window.setTimeout(() => {
       invoiceCommands.getInvoicePreview({ target: { draftId: selected.id } }).then(result => {
@@ -111,7 +112,7 @@ export function useInvoiceProduct(settings: AppSettings, store: InvoiceStore, re
       })
     }, 1000)
     return () => { active = false; window.clearTimeout(timer) }
-  }, [currentPreviewKey, !!(selected && edits[selected.id]), busy, error])
+  }, [currentPreviewKey, !!(selected && edits[selected.id]), busy, error, previewsPaused])
   const [clientTest, setClientTest] = useState<{ clientId: string; result: Awaited<ReturnType<typeof invoiceCommands.getTemplatePreview>> | null } | null>(null)
   async function run(action: () => Promise<unknown>) {
     setError(''); setMessage(''); setBusy(true)

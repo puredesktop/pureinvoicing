@@ -7,7 +7,7 @@ import { unitPriceText } from '../../../lib/invoices/proposalHtml'
 import { PROPOSAL_STATUS_LABEL, amountText, calculateProposal, conversionTarget, latestVersion, parseAmountInput } from '../../../lib/invoices/proposals'
 import { invoiceCommands } from '../../../lib/invoices/workspace'
 import type { Diagnostic, InvoiceStore, Proposal, ProposalContent, ProposalVersion } from '../../../lib/invoices/types'
-import { Icon, shortDate } from '../bits'
+import { Icon, compactAttrs, shortDate } from '../bits'
 import { Area, Body, Btn, Callout, Card, Field, Grid, Hint, IconBtn, Input, Kicker, Main, Meta, Mono, Panel, Sec, SecHead, Seg, SegBtn, Select, TopBar } from '../deskStyles'
 import { ProposalStatusChip } from './ProposalsView'
 
@@ -43,7 +43,8 @@ const fromForm = (f: Form): ProposalContent => {
 const pendingForms = new Map<string, Form>()
 const pendingKey = (proposalId: string, versionId: string) => `${proposalId}:${versionId}`
 
-export function ProposalPage({ product: p, store, proposal, disabled }: { product: InvoiceProduct; store: InvoiceStore; proposal: Proposal; disabled: boolean }): React.ReactElement {
+export function ProposalPage({ product: p, store, proposal, disabled, compact }: { product: InvoiceProduct; store: InvoiceStore; proposal: Proposal; disabled: boolean; compact?: boolean }): React.ReactElement {
+  const { bar, hide, page, keep } = compactAttrs(compact)
   const latest = latestVersion(proposal)
   // A settled proposal opens on the accepted version; any later draft is kept for the record only.
   const settled = !!proposal.acceptedVersionId
@@ -126,8 +127,8 @@ export function ProposalPage({ product: p, store, proposal, disabled }: { produc
   const shown = editable ? form : toForm(version.content)
   return (
     <>
-      <TopBar as="div" style={{ height: 48, borderTop: '1px solid var(--d-line)', background: 'transparent', backdropFilter: 'none' }}>
-        <Btn $quiet $sm onClick={() => p.openProposal(null)}><Icon.back />Proposals</Btn>
+      <TopBar as="div" {...bar} style={{ height: 48, borderTop: '1px solid var(--d-line)', background: 'transparent', backdropFilter: 'none' }}>
+        <Btn $quiet $sm onClick={() => p.openProposal(null)}><Icon.back />{compact ? 'Back' : 'Proposals'}</Btn>
         <span style={{ fontSize: 14, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>{content.title || 'Untitled proposal'}</span>
         <ProposalStatusChip status={version.status} />
         <span style={{ flex: 1 }} />
@@ -136,14 +137,15 @@ export function ProposalPage({ product: p, store, proposal, disabled }: { produc
             {proposal.versions.map(v => <SegBtn key={v.id} role="tab" aria-selected={v.id === version.id} $on={v.id === version.id} {...agentRefs(`Version ${v.number}`, versionRefs(v.id))} onClick={() => { if (v.id !== version.id) void p.act(async () => { await saveFirst('switch versions'); setVersionId(v.id) }) }}>v{v.number} · {PROPOSAL_STATUS_LABEL[v.status]}</SegBtn>)}
           </Seg>
         ) : null}
-        <Btn $sm disabled={disabled} onClick={exportHtml}><Icon.download />Export HTML</Btn>
+        {compact ? <Mono data-compact-total="">{content.currency ? formatMoney(calculation.total, content.currency) : calculation.total}</Mono> : null}
+        <Btn {...hide} $sm disabled={disabled} onClick={exportHtml}><Icon.download />Export HTML</Btn>
       </TopBar>
-      <Body style={{ gap: 14 }} {...agentRefs(label, proposalRefs(proposal.id), '@open')}>
-        <Main style={{ overflow: 'auto' }}>
+      <Body {...page} style={{ gap: 14 }} {...agentRefs(label, proposalRefs(proposal.id), '@open')}>
+        <Main {...keep} style={{ overflow: 'auto' }}>
           <Panel $strong>
             {!editable && version.status === 'draft' ? <Sec><Callout $tone="info"><Icon.info /><span><b>Version {version.number} was never offered.</b> Version {proposal.versions.find(v => v.id === proposal.acceptedVersionId)?.number} was accepted, so this proposal is settled and this draft is kept as it is.</span></Callout></Sec>
               : !editable ? <Sec><Callout $tone="info"><Icon.info /><span><b>Version {version.number} is {PROPOSAL_STATUS_LABEL[version.status].toLowerCase()}.</b> It stays exactly as {version.offeredAt ? `offered on ${shortDate(version.offeredAt)}` : 'it was'}. {version.id === latest.id && !proposal.acceptedVersionId ? 'Revising it starts the next version.' : ''}</span></Callout></Sec> : null}
-            <Sec>
+            <Sec {...hide}>
               <SecHead><h3>Enquiry</h3><span className="sp" /><Hint>Kept for your record; not printed on the offer</Hint></SecHead>
               <Grid $cols="160px 1fr">
                 <Field><span>Received</span><Input type="date" value={form.enquiryDate ?? ''} readOnly={!editable} aria-invalid={!!problem('enquiryDate')} onChange={event => set({ enquiryDate: event.target.value || null })} onBlur={() => void commit()} /></Field>
@@ -152,15 +154,15 @@ export function ProposalPage({ product: p, store, proposal, disabled }: { produc
             </Sec>
             <Sec>
               <SecHead><h3>Customer</h3><span className="sp" />
-                {editable && Object.keys(store.clients).length ? <Select style={{ width: 220, height: 28 }} value="" disabled={disabled} aria-label="Copy from client" onChange={event => { if (event.target.value) void copyClient(event.target.value) }}>
+                {editable && Object.keys(store.clients).length ? <Select {...hide} style={{ width: 220, height: 28 }} value="" disabled={disabled} aria-label="Copy from client" onChange={event => { if (event.target.value) void copyClient(event.target.value) }}>
                   <option value="">Copy from client…</option>{Object.values(store.clients).sort((a, b) => a.name.localeCompare(b.name)).map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </Select> : null}
               </SecHead>
               <Grid>
                 <Field><span>Customer name</span><Input value={shown.customer.name} placeholder="Customer name" readOnly={!editable} aria-invalid={!!problem('customer.name')} onChange={event => setCustomer({ name: event.target.value })} onBlur={() => void commit()} /></Field>
                 <Field><span>Contact</span><Input value={shown.customer.contactName ?? ''} placeholder="Person to address" readOnly={!editable} onChange={event => setCustomer({ contactName: event.target.value })} onBlur={() => void commit()} /></Field>
-                <Field><span>Address</span><Area value={shown.customer.address} placeholder="Billing address" readOnly={!editable} onChange={event => setCustomer({ address: event.target.value })} onBlur={() => void commit()} /></Field>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <Field {...hide}><span>Address</span><Area value={shown.customer.address} placeholder="Billing address" readOnly={!editable} onChange={event => setCustomer({ address: event.target.value })} onBlur={() => void commit()} /></Field>
+                <div {...hide} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                   <Field><span>Email</span><Input value={shown.customer.email ?? ''} readOnly={!editable} onChange={event => setCustomer({ email: event.target.value })} onBlur={() => void commit()} /></Field>
                   <Grid><Field><span>Phone</span><Input value={shown.customer.phone ?? ''} readOnly={!editable} onChange={event => setCustomer({ phone: event.target.value })} onBlur={() => void commit()} /></Field>
                     <Field><span>Tax ID</span><Input value={shown.customer.taxIdentifier ?? ''} readOnly={!editable} onChange={event => setCustomer({ taxIdentifier: event.target.value })} onBlur={() => void commit()} /></Field></Grid>
@@ -208,9 +210,9 @@ export function ProposalPage({ product: p, store, proposal, disabled }: { produc
             </Sec>
             <Sec>
               <SecHead><h3>Payment terms</h3></SecHead>
-              <Grid $cols="1fr 180px">
+              <Grid $cols={compact ? '1fr' : '1fr 180px'}>
                 {editable ? text('paymentTerms', 'Terms', 'e.g. 50% on acceptance, the rest on delivery') : <Field as="div"><span>Terms</span><div style={{ whiteSpace: 'pre-wrap', fontSize: 13 }}>{version.content.paymentTerms || <Meta>Not stated</Meta>}</div></Field>}
-                <Field><span>Invoice due after (days)</span><Input value={shown.paymentTermsDays} inputMode="numeric" placeholder="e.g. 14" readOnly={!editable} aria-invalid={!!problem('paymentTermsDays')} onChange={event => set({ paymentTermsDays: event.target.value })} onBlur={() => void commit()} /></Field>
+                <Field {...hide}><span>Invoice due after (days)</span><Input value={shown.paymentTermsDays} inputMode="numeric" placeholder="e.g. 14" readOnly={!editable} aria-invalid={!!problem('paymentTermsDays')} onChange={event => set({ paymentTermsDays: event.target.value })} onBlur={() => void commit()} /></Field>
               </Grid>
             </Sec>
           </Panel>

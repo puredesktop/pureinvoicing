@@ -31,6 +31,7 @@ import {
   writePlatformStorageJson,
 } from '@purescience/platform-ui/bridge/storage'
 import { toggleAgentDrawer } from '@purescience/platform-ui/bridge/workspace'
+import { PLATFORM_BRIDGE_METHODS } from '@purescience/platform-ui/bridge/client'
 import { APP_SLUG } from '../constants'
 import { canUseInvoiceStorage } from './invoiceStorageCapabilities'
 import { saveInNewFolder } from '../lib/invoices/proposalHtml'
@@ -94,6 +95,11 @@ export type {
   PlatformStorageJsonRequest,
   PlatformStorageJsonWriteRequest,
   PlatformStorageJsonWriteResult,
+}
+
+/** Who this frame sits beside; the shell's answer also says whether it is held in a page. */
+export function askAdjacentApp(): Promise<{ heldInRoom?: boolean } | null> {
+  return bridge.call<{ heldInRoom?: boolean } | null>(PLATFORM_BRIDGE_METHODS.WORKSPACE_ADJACENT_APP)
 }
 
 const STANDALONE_SETTINGS_KEY = 'puredesktop:invoicing:settings'

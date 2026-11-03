@@ -56,6 +56,24 @@ export function Money({ amount, currency, strong }: { amount: string; currency: 
 
 export { longDate }
 
+const COMPACT_ON = {
+  /** The desk itself: only what is marked below stays on screen (compact-in-room.css). */
+  desk: { 'data-compact-desk': '' },
+  /** A direct child of the desk that stays on screen. */
+  show: { 'data-compact-show': '' },
+  /** A page's top bar, which stays on screen. */
+  bar: { 'data-compact-show': '', 'data-compact-bar': '' },
+  /** Chrome that stays mounted but out of sight, and out of reach of the keyboard. */
+  hide: { 'data-compact-hide': '' },
+  /** A page body: everything in it goes except the one column marked keep. */
+  page: { 'data-compact-show': '', 'data-compact-page': '' },
+  keep: { 'data-compact-keep': '' },
+}
+const COMPACT_OFF = { desk: undefined, show: undefined, bar: undefined, hide: undefined, page: undefined, keep: undefined }
+
+/** Props to spread on existing elements. With compact off they are nothing, so the DOM is what it always was. */
+export const compactAttrs = (compact: boolean | undefined): typeof COMPACT_ON | typeof COMPACT_OFF => (compact ? COMPACT_ON : COMPACT_OFF)
+
 /** Inline stroke icons: no icon font, no emoji. */
 export const Icon = {
   search: () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" /></svg>,
