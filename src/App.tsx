@@ -7,6 +7,7 @@ import { APP_TITLE } from './constants'
 import { useAppBoot } from './hooks/useAppBoot'
 import { useAppAgentTools } from './hooks/useAppAgentTools'
 import { useCompactInRoom } from './hooks/useCompactInRoom'
+import { useCopyKnown } from './hooks/useCopyKnown'
 import { useInvoiceWorkspace } from './hooks/useInvoiceWorkspace'
 
 /** Two gates and a frame: the bridge, then boot, then the desk. */
@@ -14,7 +15,9 @@ export function App(): React.ReactElement {
   const { error: bridgeError, ready, meta } = usePlatformBridge()
   const compact = useCompactInRoom()
   const compactFrame = compact ? { 'data-compact-room': '' } : undefined
-  const invoiceWorkspace = useInvoiceWorkspace(ready, meta?.methods)
+  // Whether this copy is held in a page comes first: the store, the share and the desk all start after it.
+  const copyKnown = useCopyKnown(ready)
+  const invoiceWorkspace = useInvoiceWorkspace(ready && copyKnown, meta?.methods)
   useAppAgentTools(ready)
   const standaloneDev = isStandaloneDevMode()
   const bootReady = ready || standaloneDev
@@ -28,7 +31,7 @@ export function App(): React.ReactElement {
     )
   }
 
-  if (!bootReady || !boot) {
+  if (!bootReady || !boot || !copyKnown) {
     return (
       <AppFrame {...compactFrame}>
         <EmptyState

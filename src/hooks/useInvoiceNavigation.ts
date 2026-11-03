@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState } from 'react'
 import { saveInvoiceNavigationSettings } from '../bridge/platformBridge'
+import { isHeldCopy } from '../lib/heldCopy'
 import { parseNavigation } from '../lib/invoices/parse'
 import type { NavigationPreferences } from '../lib/invoices/types'
 import type { AppSettings } from '../types'
@@ -12,6 +13,8 @@ export function useInvoiceNavigation(settings: AppSettings, ready: boolean) {
     if (!ready) return Promise.reject(new Error('Waiting for the shell bridge.'))
     const next = parseNavigation({ invoiceNavigation: { ...current.current, ...patch } })
     current.current = next; setNavigation(next)
+    // Where the person was is the normal tab's to remember; a mini app's clicks stay in its own memory.
+    if (isHeldCopy()) return Promise.resolve()
     const save = queue.current.then(async () => {
       try { await saveInvoiceNavigationSettings(next); setError(null) }
       catch (error) { console.error('Invoice navigation save failed', error); setError(error instanceof Error ? error : new Error(String(error))); throw error }

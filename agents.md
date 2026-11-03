@@ -122,6 +122,28 @@ page images. Read the full content with `getInvoice`, `getAgreement`,
   `saveDraftPresentationAsDefault` to promote. Use only asset ids the app
   reports; ask the person to upload a logo in the app.
 
+## Several running copies
+
+A mini app (held in the Executive room or the Personal agent's page) is a second
+live copy of this app, alongside any normal tab, each with its own memory, over
+one store file (`invoicing-workspace.json`). `lib/invoices/repository.ts` keeps
+that safe; `tests/two-copies.mjs` proves it with two repositories on one fake file.
+
+- A change is worked out on the file as it is now: the repository re-reads before
+  a save, and if another copy saves in between, the shell refuses the write
+  (`ifMatch`) and the change runs again. So numbers come from the file, not from
+  an old view, and agreement numbers can't repeat. Invoice numbers go through
+  `guardedTransact` as before.
+- The same record edited in two copies keeps the later edit; different fields of
+  it both stay. A record another copy deleted stays deleted: the change is refused
+  and the copy shows the file.
+- Only work kept through a failed save reaches the compare screen, when it no
+  longer applies. Nothing is dropped or forced back without the person.
+- Copies follow each other every 15 seconds and on focus (`repository.sync`).
+- `lib/heldCopy.ts` says which copy this is, and the app waits for that answer
+  before it starts. A held copy never publishes the money share and never saves
+  where the person was. The app has no reminders, schedules or background sends.
+
 ## Bulk import
 
 A `pure-invoicing/1` document (`docs/import-format.md`) carries a business,
@@ -231,7 +253,8 @@ Amounts are plain numbers in the invoice's or agreement's own currency. The
 file is rewritten whole on open and after every saved change
 (`src/lib/invoices/moneyShare.ts`, wired in `src/hooks/useMoneyShare.ts`). It
 is read-only for everyone: never edit it, and never treat it as the record;
-the store is. Format: ps-suite#1013, file formats §2b.
+the store is. A copy held in a page does not write it, so it is as fresh as the
+last normal tab. Format: ps-suite#1013, file formats §2b.
 
 ## Task to tool
 

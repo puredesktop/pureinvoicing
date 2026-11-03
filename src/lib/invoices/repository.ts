@@ -14,6 +14,7 @@ export interface RepositoryState {
   conflicts: StoreConflict[]
   remote: InvoiceStore | null
 }
+type StoreUpdate = (current: InvoiceStore) => InvoiceStore
 const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b)
 function freeze<T>(value: T): T {
   if (value && typeof value === 'object') { Object.freeze(value); Object.values(value).forEach(freeze) }
@@ -48,6 +49,8 @@ export class InvoiceRepository {
   private loading: Promise<void> | null = null
   private listeners = new Set<() => void>()
   private tail: Promise<unknown> = Promise.resolve()
+  /** This copy's changes not yet confirmed on disk, oldest first. */
+  private staged: StoreUpdate[] = []
   constructor(private readonly storage: StoragePort) {}
   getSnapshot = (): RepositoryState => this.state
   subscribe = (callback: () => void) => { this.listeners.add(callback); return () => { this.listeners.delete(callback) } }
@@ -86,19 +89,38 @@ export class InvoiceRepository {
   async current(): Promise<InvoiceStore> {
     await this.tail; await this.initialize(); return this.state.value
   }
-  transact(update: (current: InvoiceStore) => InvoiceStore): Promise<InvoiceStore> {
+  // Several copies of the app run over one file (a tab and a mini app), each with its own memory. A change is
+  // therefore worked out on the file as it is now: numbers, checks and edits to one record never come from an old
+  // view. If another copy saves between the read and the write, the shell refuses the write and the change runs again.
+  transact(update: StoreUpdate): Promise<InvoiceStore> {
     return this.enqueue(async () => {
       await this.initialize()
       if (this.state.status === 'conflict') throw new Error('Resolve the save conflict first. Your local edits are preserved.')
+      const recovering = this.state.status === 'error'
+      if (!recovering) await this.pull().catch(error => console.warn('Invoice store could not be re-read before saving', error))
       const value = parseStore(update(structuredClone(this.state.value)))
       assertForwardTransition(this.base, value)
+      this.staged.push(update)
       this.emit({ value, error: null })
-      return this.persist()
+      return this.persist(recovering)
     })
+  }
+  /** Take what another copy saved, when nothing here is waiting to be saved. Quiet when the file has not changed. */
+  sync(): Promise<void> {
+    return this.enqueue(async () => {
+      if (this.loaded && this.state.status === 'saved') await this.pull()
+    })
+  }
+  private async pull(): Promise<void> {
+    const result = await this.storage.read()
+    if (result.version === this.version) return
+    const value = parseStore(result.value)
+    this.base = structuredClone(value); this.version = result.version
+    this.emit({ value, status: 'saved', error: null })
   }
   // Publication must never enter the editable conflict/merge path. Re-evaluate
   // the approved operation on each fresh CAS snapshot, without staging it locally.
-  guardedTransact(update: (current: InvoiceStore) => InvoiceStore): Promise<InvoiceStore> {
+  guardedTransact(update: StoreUpdate): Promise<InvoiceStore> {
     return this.enqueue(async () => {
       await this.initialize()
       if (!this.enabled || this.state.status !== 'saved') throw new Error('Save or resolve local work before finalization.')
@@ -132,23 +154,45 @@ export class InvoiceRepository {
       throw new Error('Workspace changed repeatedly. Prepare and approve a fresh confirmation.')
     })
   }
-  private async persist(): Promise<InvoiceStore> {
+  /** `recovering`: this copy's work had already failed to save once, so it is kept for the person rather than dropped. */
+  private async persist(recovering = false): Promise<InvoiceStore> {
     if (!this.enabled) throw new Error('Waiting for the PureDesktop shell bridge. Edits remain unsaved.')
     this.emit({ status: 'saving', error: null })
     try {
       for (let attempt = 0; attempt < 3; attempt++) {
         const value = this.state.value
         assertForwardTransition(this.base, value)
-        if (same(value, this.base)) { this.emit({ status: 'saved' }); return value }
+        if (same(value, this.base)) { this.staged = []; this.emit({ status: 'saved' }); return value }
         const result = await this.storage.write(value, this.version)
         if (result.ok) {
-          this.base = structuredClone(value); this.version = result.version
+          this.base = structuredClone(value); this.version = result.version; this.staged = []
           this.emit({ status: 'saved', conflicts: [], remote: null }); return value
         }
         if (!result.conflict) throw new Error('The shell did not confirm the save. Retry to recover.')
-        const remote = parseStore(result.value)
-        const merged = mergeStores(this.base, value, remote)
+        const previous = this.base, remote = parseStore(result.value)
         this.version = result.version; this.base = structuredClone(remote)
+        // A write whose acknowledgement was lost is already there.
+        if (same(remote, value)) { this.staged = []; this.emit({ status: 'saved', conflicts: [], remote: null }); return value }
+        if (this.staged.length) {
+          // Run this copy's changes again on what is on disk now.
+          try {
+            const next = this.staged.reduce((current, update) => parseStore(update(structuredClone(current))), remote)
+            assertForwardTransition(remote, next)
+            this.emit({ value: next })
+            continue
+          } catch (error) {
+            if (!recovering) {
+              // The change no longer applies (another copy deleted the record, moved the counter on). Nothing of it
+              // lands, nothing deleted comes back, and this copy now shows the file.
+              this.staged = []
+              this.emit({ value: remote, status: 'saved', error: null, conflicts: [], remote: null })
+              throw error
+            }
+            console.warn('A change kept through a failed save no longer applies; comparing both versions', error)
+          }
+        }
+        this.staged = []
+        const merged = mergeStores(previous, value, remote)
         if (merged.conflicts.length) {
           this.emit({ status: 'conflict', conflicts: merged.conflicts, remote, value: merged.value,
             error: 'This work changed in another window. Compare both versions and resolve the conflicting records; local edits are retained.' })
@@ -160,7 +204,7 @@ export class InvoiceRepository {
       throw new Error('The workspace keeps changing in another window. Your edits are retained; retry saving.')
     } catch (error) {
       console.error('Invoice store save failed', error)
-      if (this.state.status !== 'conflict') this.emit({ status: 'error', error: error instanceof Error ? error.message : String(error) })
+      if (this.state.status === 'saving') this.emit({ status: 'error', error: error instanceof Error ? error.message : String(error) })
       throw error
     }
   }
@@ -168,7 +212,7 @@ export class InvoiceRepository {
     return this.enqueue(async () => {
       await this.initialize()
       if (this.state.status === 'conflict') throw new Error('Choose a resolution for each conflicting record before retrying.')
-      return this.persist()
+      return this.persist(true)
     })
   }
   resolveConflicts(choices: Record<string, 'local' | 'remote'>): Promise<InvoiceStore> {
@@ -189,8 +233,9 @@ export class InvoiceRepository {
       }
       assertForwardTransition(this.base, value)
       const parsed = parseStore(value)
+      this.staged = []
       this.emit({ value: parsed, conflicts: [], remote: null, error: null })
-      return this.persist()
+      return this.persist(true)
     })
   }
   refresh(): Promise<InvoiceStore> {
