@@ -13,12 +13,13 @@ import { LinesEditor } from './LinesEditor'
 import { PreviewPane } from './PreviewPane'
 import { EmailsInput } from './EmailsInput'
 import { PeopleLookupInput } from './PeopleLookupInput'
-import { Icon, Money } from './bits'
+import { Icon, Money, compactAttrs } from './bits'
 import { agentRefs, invoiceRefs } from '../../lib/agentRefs'
 import { Area, Body, Btn, Callout, Chip, Dot, Field, Grid, Hint, Input, Main, Meta, Mono, Panel, Sec, SecHead, Select, Switch, TopBar } from './deskStyles'
 
 /** A draft or a correction: the structured editor on the left, the pages as they will print on the right. */
-export function EditorView({ product: p, directory: d, store, disabled }: { product: InvoiceProduct; directory: ClientDirectory; store: InvoiceStore; disabled: boolean }): React.ReactElement | null {
+export function EditorView({ product: p, directory: d, store, disabled, compact }: { product: InvoiceProduct; directory: ClientDirectory; store: InvoiceStore; disabled: boolean; compact?: boolean }): React.ReactElement | null {
+  const { bar, hide, page, keep } = compactAttrs(compact)
   const [picker, setPicker] = useState<DOMRect | null>(null)
   const [appearance, setAppearance] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -51,35 +52,37 @@ export function EditorView({ product: p, directory: d, store, disabled }: { prod
   const previewDiagnostics = [...(p.preview?.diagnostics.filter(candidate => !candidate.field.startsWith('pages.')) ?? []), ...calculation.warnings]
   return (
     <>
-      <TopBar as="div" style={{ height: 44, borderTop: '1px solid var(--d-line)', background: 'transparent', backdropFilter: 'none' }}>
+      <TopBar as="div" {...bar} style={{ height: 44, borderTop: '1px solid var(--d-line)', background: 'transparent', backdropFilter: 'none' }}>
+        {compact ? <Btn $quiet $sm onClick={() => p.openInvoice(null)}><Icon.back />Back</Btn> : null}
         <Mono style={{ fontSize: 14, fontWeight: 500 }}>{historical && originalNumber ? `#${originalNumber}` : p.label}</Mono>
-        <Chip $tone={correction ? 'warn' : historical ? 'info' : 'neutral'}>{correction ? 'Correction · same number, new version' : historical ? 'Registering a past invoice' : 'Draft · number assigned when issued'}</Chip>
-        {selected.source && !correction ? <Hint>copied from {p.labelFor(selected.source.invoiceId) ?? 'a draft'}</Hint> : null}
+        <Chip $tone={correction ? 'warn' : historical ? 'info' : 'neutral'}>{compact ? (correction ? 'Correction' : 'Draft') : correction ? 'Correction · same number, new version' : historical ? 'Registering a past invoice' : 'Draft · number assigned when issued'}</Chip>
+        {selected.source && !correction ? <Hint {...hide}>copied from {p.labelFor(selected.source.invoiceId) ?? 'a draft'}</Hint> : null}
         <span style={{ flex: 1 }} />
+        {compact ? <Mono data-compact-total="">{formatMoney(calculation.total, content.currency)}</Mono> : null}
         <Meta style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Dot $color={p.dirty ? 'var(--d-warn-ink)' : 'var(--d-ok-ink)'} />{p.dirty ? 'Saving…' : 'Saved'}</Meta>
-        <Btn onClick={() => setAppearance(open => !open)} aria-pressed={appearance}>Appearance</Btn>
-        {correction ? <Btn disabled={disabled} onClick={() => p.download({ kind: 'downloadVersion' })} title="The PDF as issued, unchanged by this correction">Issued PDF</Btn> : null}
-        <Btn $acc disabled={primaryBlocked} onClick={primary}>{primaryLabel}</Btn>
+        <Btn {...hide} onClick={() => setAppearance(open => !open)} aria-pressed={appearance}>Appearance</Btn>
+        {correction ? <Btn {...hide} disabled={disabled} onClick={() => p.download({ kind: 'downloadVersion' })} title="The PDF as issued, unchanged by this correction">Issued PDF</Btn> : null}
+        <Btn {...hide} $acc disabled={primaryBlocked} onClick={primary}>{primaryLabel}</Btn>
       </TopBar>
-      <Body style={{ position: 'relative' }} {...agentRefs(`${p.label}${correction ? ' · correction' : ' · draft'}`, invoiceRefs(selected.id), invoiceRefs(selected.correctionOf), '@open')}>
-        <Panel $strong style={{ flex: '0 0 700px', overflow: 'auto' }}>
+      <Body {...page} style={{ position: 'relative' }} {...agentRefs(`${p.label}${correction ? ' · correction' : ' · draft'}`, invoiceRefs(selected.id), invoiceRefs(selected.correctionOf), '@open')}>
+        <Panel {...keep} $strong style={{ flex: '0 0 700px', overflow: 'auto' }}>
           <Sec>
             <SecHead><h3>Bill to</h3>{linkedClient ? <Chip $tone="acc">From directory · {linkedClient.name}</Chip> : null}<span className="sp" />
-              <Btn $quiet $sm disabled={disabled} onClick={event => setPicker(event.currentTarget.getBoundingClientRect())}>{linkedClient ? 'Change client' : 'Choose a client'}</Btn>
-              {content.recipient.name.trim() ? <Btn $quiet $sm disabled={disabled || !!d.editor} onClick={() => d.saveRecipient(content.recipient, linkedClient?.id)} title={linkedClient ? 'Update the directory record with these details' : 'Save these details as a client'}>{linkedClient ? 'Update directory' : 'Save as client'}</Btn> : null}
+              <Btn {...hide} $quiet $sm disabled={disabled} onClick={event => setPicker(event.currentTarget.getBoundingClientRect())}>{linkedClient ? 'Change client' : 'Choose a client'}</Btn>
+              {content.recipient.name.trim() ? <Btn {...hide} $quiet $sm disabled={disabled || !!d.editor} onClick={() => d.saveRecipient(content.recipient, linkedClient?.id)} title={linkedClient ? 'Update the directory record with these details' : 'Save these details as a client'}>{linkedClient ? 'Update directory' : 'Save as client'}</Btn> : null}
             </SecHead>
             <Grid>
               <Field><span>Client organisation</span><PeopleLookupInput kind="org" value={content.recipient.name} invalid={!!problem('recipient.name')} placeholder="Name or PurePeople organisation" onChange={name => p.editDraft({ recipient: { name } })} onPick={org => p.editDraft({ recipient: { name: org.name, phone: content.recipient.phone || org.phone } })} />{problem('recipient.name') ? <Hint $err>{problem('recipient.name')!.message}</Hint> : null}</Field>
               <Field><span>Attention</span><PeopleLookupInput kind="person" value={content.recipient.contactName ?? ''} placeholder="Name or PurePeople contact" onChange={contactName => p.editDraft({ recipient: { contactName } })} onPick={person => p.editDraft({ recipient: { contactName: person.name, email: content.recipient.email || person.email, phone: content.recipient.phone || person.phone, name: content.recipient.name.trim() || person.organization || content.recipient.name } })} /></Field>
             </Grid>
-            <Grid $cols="1.4fr 1fr">
+            <Grid {...hide} $cols="1.4fr 1fr">
               <Field><span>Billing address</span><Area value={content.recipient.address} aria-invalid={!!problem('recipient.address')} placeholder={'Street\nCity, region, postcode'} onChange={event => p.editDraft({ recipient: { address: event.target.value } })} />{problem('recipient.address') ? <Hint $err>{problem('recipient.address')!.message}</Hint> : null}</Field>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 <Field as="div"><span>Email</span><EmailsInput value={content.recipient.email} onChange={email => p.editDraft({ recipient: { email } })} onPickPerson={person => p.editDraft({ recipient: { contactName: content.recipient.contactName?.trim() ? content.recipient.contactName : person.name, phone: content.recipient.phone || person.phone, name: content.recipient.name.trim() || person.organization || content.recipient.name } })} /></Field>
                 <Field><span>Tax identifier</span><Input value={content.recipient.taxIdentifier ?? ''} placeholder="optional" onChange={event => p.editDraft({ recipient: { taxIdentifier: event.target.value } })} /></Field>
               </div>
             </Grid>
-            {linkedClient ? <Hint>Edits here stay on this invoice. Update the directory if the details have changed for good.</Hint> : null}
+            {linkedClient ? <Hint {...hide}>Edits here stay on this invoice. Update the directory if the details have changed for good.</Hint> : null}
           </Sec>
           <Sec>
             <SecHead><h3>Dates and terms</h3></SecHead>
@@ -93,7 +96,7 @@ export function EditorView({ product: p, directory: d, store, disabled }: { prod
             {selected.currencyReviewRequired ? <Callout $tone="warn" style={{ alignItems: 'center' }}><Icon.warn /><span><b>Currency changed without conversion.</b> Review every rate before issuing.</span><span className="sp" /><Btn $sm disabled={disabled} onClick={p.acknowledgeCurrency}>I reviewed all prices</Btn></Callout> : null}
             <Field><span>Reference</span><Input value={content.reference} placeholder="Agreement, PO or statement of work" onChange={event => p.editDraft({ reference: event.target.value })} /></Field>
             {!correction ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+              <div {...hide} style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
                 <Switch $on={historical}><input type="checkbox" checked={historical} disabled={disabled} onChange={event => { setHistorical(event.target.checked); p.cancelPublication() }} /><i />This is an invoice I issued before</Switch>
                 {historical ? <>
                   <Field style={{ width: 180 }}><span>Original number (counter)</span><Input inputMode="numeric" value={originalNumber} placeholder="e.g. 4" onChange={event => { setOriginalNumber(event.target.value.replace(/\D/g, '')); p.cancelPublication() }} /></Field>
@@ -102,17 +105,17 @@ export function EditorView({ product: p, directory: d, store, disabled }: { prod
                 </> : null}
               </div>
             ) : (
-              <Field><span>Change note (goes in the history)</span><Input value={changeNote} placeholder="What changed and why" onChange={event => { setChangeNote(event.target.value); p.cancelPublication() }} /></Field>
+              <Field {...hide}><span>Change note (goes in the history)</span><Input value={changeNote} placeholder="What changed and why" onChange={event => { setChangeNote(event.target.value); p.cancelPublication() }} /></Field>
             )}
           </Sec>
           <Sec>
             <LinesEditor product={p} reuseFrom={reuseFrom} />
           </Sec>
-          <Sec style={{ background: 'color-mix(in srgb, var(--d-paper) 45%, transparent)' }}>
+          <Sec {...(compact ? { 'data-compact-flat': '' } : undefined)} style={{ background: 'color-mix(in srgb, var(--d-paper) 45%, transparent)' }}>
             <Grid $cols="1fr 250px" style={{ gap: 18, alignItems: 'start' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <Field><span>Note to client</span><Input value={content.notes} placeholder="Printed under the totals" onChange={event => p.editDraft({ notes: event.target.value })} /></Field>
-                <Field><span>Payment instructions</span><Area style={{ minHeight: 48, fontSize: 12 }} value={content.paymentInstructions} onChange={event => p.editDraft({ paymentInstructions: event.target.value })} /><Hint>From Business defaults. Change it here for this invoice only.</Hint></Field>
+                <Field {...hide}><span>Payment instructions</span><Area style={{ minHeight: 48, fontSize: 12 }} value={content.paymentInstructions} onChange={event => p.editDraft({ paymentInstructions: event.target.value })} /><Hint>From Business defaults. Change it here for this invoice only.</Hint></Field>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12.5 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}><Meta>Subtotal</Meta><Mono>{formatAmount(calculation.subtotal, content.currency)}</Mono></div>
@@ -123,7 +126,7 @@ export function EditorView({ product: p, directory: d, store, disabled }: { prod
               </div>
             </Grid>
           </Sec>
-          <Sec>
+          <Sec {...hide}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <Btn $quiet $sm $danger disabled={disabled} onClick={() => setDeleting(true)}>{correction ? 'Discard correction' : 'Delete draft'}</Btn>
               <span style={{ flex: 1 }} />

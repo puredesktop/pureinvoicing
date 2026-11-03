@@ -6,11 +6,14 @@ import { isStandaloneDevMode } from './bridge/platformBridge'
 import { APP_TITLE } from './constants'
 import { useAppBoot } from './hooks/useAppBoot'
 import { useAppAgentTools } from './hooks/useAppAgentTools'
+import { useCompactInRoom } from './hooks/useCompactInRoom'
 import { useInvoiceWorkspace } from './hooks/useInvoiceWorkspace'
 
 /** Two gates and a frame: the bridge, then boot, then the desk. */
 export function App(): React.ReactElement {
   const { error: bridgeError, ready, meta } = usePlatformBridge()
+  const compact = useCompactInRoom()
+  const compactFrame = compact ? { 'data-compact-room': '' } : undefined
   const invoiceWorkspace = useInvoiceWorkspace(ready, meta?.methods)
   useAppAgentTools(ready)
   const standaloneDev = isStandaloneDevMode()
@@ -19,7 +22,7 @@ export function App(): React.ReactElement {
 
   if (bridgeError && !standaloneDev) {
     return (
-      <AppFrame>
+      <AppFrame {...compactFrame}>
         <EmptyState tone="error" title="Bridge unavailable" message={bridgeError.message} />
       </AppFrame>
     )
@@ -27,7 +30,7 @@ export function App(): React.ReactElement {
 
   if (!bootReady || !boot) {
     return (
-      <AppFrame>
+      <AppFrame {...compactFrame}>
         <EmptyState
           tone={bootError ? 'error' : 'neutral'}
           title={bootError ? 'Boot failed' : APP_TITLE}
@@ -37,5 +40,5 @@ export function App(): React.ReactElement {
     )
   }
 
-  return <AppShell settings={boot.settings} invoiceWorkspace={invoiceWorkspace} standalone={standaloneDev} />
+  return <AppShell settings={boot.settings} invoiceWorkspace={invoiceWorkspace} standalone={standaloneDev} compact={compact} />
 }

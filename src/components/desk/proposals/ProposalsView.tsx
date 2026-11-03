@@ -20,11 +20,11 @@ export function ProposalStatusChip({ status }: { status: ProposalStatus }): Reac
  * Proposals: enquiries and the offers made for them. Kept apart from
  * invoices; an accepted offer becomes an invoice draft only when asked.
  */
-export function ProposalsView({ product: p, store, disabled }: { product: InvoiceProduct; store: InvoiceStore; disabled: boolean }): React.ReactElement {
+export function ProposalsView({ product: p, store, disabled, compact }: { product: InvoiceProduct; store: InvoiceStore; disabled: boolean; compact?: boolean }): React.ReactElement {
   const [place, setPlace] = useState<'all' | ProposalStatus>('all')
   const [query, setQuery] = useState('')
   const selected = p.selectedProposalId ? store.proposals?.[p.selectedProposalId] : undefined
-  if (selected) return <ProposalPage key={selected.id} product={p} store={store} proposal={selected} disabled={disabled} />
+  if (selected) return <ProposalPage key={selected.id} product={p} store={store} proposal={selected} disabled={disabled} compact={compact} />
   const rows = proposalRows(store)
   const needle = query.trim().toLocaleLowerCase()
   const visible = rows.filter(r => (place === 'all' || r.status === place) && (!needle || [r.title, r.customer].some(v => v.toLocaleLowerCase().includes(needle))))

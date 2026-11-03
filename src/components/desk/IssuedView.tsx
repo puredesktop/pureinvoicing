@@ -13,13 +13,13 @@ import { invoiceDocuments } from '../../lib/invoices/annotations'
 import { agentRefs, agreementRefs, invoiceRefs, versionRefs } from '../../lib/agentRefs'
 
 /** An issued invoice: the document first, and beside it where it stands, its versions and what to do next. */
-export function IssuedView({ product: p, store, disabled }: { product: InvoiceProduct; store: InvoiceStore; disabled: boolean }): React.ReactElement | null {
+export function IssuedView({ product: p, store, disabled, compact = false }: { product: InvoiceProduct; store: InvoiceStore; disabled: boolean; compact?: boolean }): React.ReactElement | null {
   const invoice = p.issued, version = p.version
   const [marking, setMarking] = useState<'sent' | null>(null)
   const [paying, setPaying] = useState(false)
   const [markDate, setMarkDate] = useState('')
   const [markExtra, setMarkExtra] = useState('')
-  useEffect(() => { if (invoice && !p.preview && !p.busy) void p.preparePreview() }, [invoice?.id, version?.id])
+  useEffect(() => { if (!compact && invoice && !p.preview && !p.busy) void p.preparePreview() }, [invoice?.id, version?.id, compact])
   if (!invoice || !version) return null
   const c = version.content, superseded = version.id !== invoice.currentVersionId, calculation = calculateInvoice(c)
   const standing = invoiceStanding(invoice)
