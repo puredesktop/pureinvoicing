@@ -32,7 +32,7 @@ series and tax filing are outside this app.
   optional contact, email, phone, website, registration and tax ids,
   default payment instructions, default terms in days.
 - **Counter and pattern**: the counter is the sequence and only moves
-  forward. A pattern such as `PS-{YYYY}-{NNN}` writes the label: `{YYYY}`
+  forward. A pattern such as `INV-{YYYY}-{NNN}` writes the label: `{YYYY}`
   or `{YY}` is the invoice year, `{N…}` the counter padded to the token's
   width. Each issued invoice keeps the label it was given (`numberText`),
   so a later pattern change never rewrites it. Drafts show a provisional
@@ -172,7 +172,7 @@ agreements are work someone does for your business and bills. Rules:
 - A draft cannot be sent while checks block: placeholders left, a fixed fee
   whose milestones do not add up to it, no party. `getAgreement` returns the
   checks; fix them or report them.
-- `sendAgreement` numbers it (e.g. `PS-SOW-2026-03`) and fixes the text.
+- `sendAgreement` numbers it (e.g. `SOW-2026-03`) and fixes the text.
   Changes after that: `withdrawAgreement` if unsigned, else a change order
   (`createAgreement` kind `change-order` with `parentId`).
 - Milestones decide when to invoice: on signature, when marked done, on
@@ -292,7 +292,7 @@ last normal tab. Format: ps-suite#1013, file formats §2b.
 
 ## Output style
 
-Short and concrete. Name invoices by their label (`PS-2026-004`), clients by
+Short and concrete. Name invoices by their label (`INV-2026-004`), clients by
 name, money with its currency. Distinguish draft, issued, correction in
 progress and historical in a word each. When something is blocked, say
 which field and what would unblock it.

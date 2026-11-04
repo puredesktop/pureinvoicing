@@ -27,7 +27,7 @@ No personal, billing, or payment example records are bundled.
 | `clients[]` | no | `name` required; `key` lets invoices refer to it. Matched to the directory by name (case-insensitive): an existing client is linked and its empty fields filled; a new one is created. |
 | `invoices[]` | yes | At least one. |
 | `invoices[].number` | yes | The counter, a positive whole number. Unique in the file and not already in the archive (or skip conflicts). |
-| `invoices[].label` | no | What the client saw, e.g. `PS-2026-002`. Kept verbatim. Without it the label is `numberFormat` applied to the counter and the year of `issuedAt`. |
+| `invoices[].label` | no | What the client saw, e.g. `INV-2026-002`. Kept verbatim. Without it the label is `numberFormat` applied to the counter and the year of `issuedAt`. |
 | `invoices[].client` | yes | A `key` from `clients[]`, or an inline `{ "name", "address", "contactName", "email", "phone", "taxIdentifier" }` kept on the invoice only. |
 | `invoices[].issuedAt` | yes | ISO date `YYYY-MM-DD`. |
 | `invoices[].dueAt` / `termsDays` | no | A due date, or terms in days after `issuedAt` (the client's `termsDays` is the fallback). |

@@ -42,7 +42,7 @@ export function BusinessView({ setup: s, product: p, store, disabled }: { setup:
               {s.dirtyPattern ? <Btn $sm disabled={disabled || !!s.patternError} onClick={s.savePattern}>Save pattern</Btn> : null}
             </div>
           </Grid>
-          <Row><Field style={{ flex: 1 }}><span>Or paste your last invoice number</span><Row><Input value={sample} placeholder="e.g. PS-2026-004" onChange={event => setSample(event.target.value)} /><Btn $sm disabled={!sample.trim()} onClick={() => { if (!s.suggestFrom(sample)) alert('No counter found in that text.') }}>Read pattern</Btn></Row></Field></Row>
+          <Row><Field style={{ flex: 1 }}><span>Or paste your last invoice number</span><Row><Input value={sample} placeholder="e.g. INV-2026-004" onChange={event => setSample(event.target.value)} /><Btn $sm disabled={!sample.trim()} onClick={() => { if (!s.suggestFrom(sample)) alert('No counter found in that text.') }}>Read pattern</Btn></Row></Field></Row>
           <Callout $tone="info"><Icon.info /><span>{registered ? <><b>{registered} past invoice{registered === 1 ? '' : 's'} registered</b>, so those numbers are checked for conflicts. </> : <><b>No past invoices registered.</b> </>}Anything issued elsewhere and not registered cannot be checked. Confirm the next counter against your own records.</span></Callout>
           {!s.confirmation ? (
             <Row>
