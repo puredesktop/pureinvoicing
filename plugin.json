@@ -28,7 +28,7 @@
       "tools": [
         {
           "name": "getWorkspaceState",
-          "description": "Read first-use and setup status, the business identity and default terms, default template, the number pattern (e.g. PS-{YYYY}-{NNN}) with the next counter and the label it will produce, archive counts, this year's invoiced/collected/outstanding totals by currency, per-client history, supported currencies and presentation options, and metadata for user-uploaded logo and PDF assets. Does not export attachment contents.",
+          "description": "Read first-use and setup status, the business identity and default terms, default template, the number pattern (e.g. INV-{YYYY}-{NNN}) with the next counter and the label it will produce, archive counts, this year's invoiced/collected/outstanding totals by currency, per-client history, supported currencies and presentation options, and metadata for user-uploaded logo and PDF assets. Does not export attachment contents.",
           "inputSchema": {
             "type": "object",
             "properties": {},
@@ -1011,7 +1011,7 @@
         },
         {
           "name": "addInvoiceNote",
-          "description": "Add a working note to an issued invoice, such as a follow-up to do ('Send the corrected PDF to Book Sprints'). Notes are never printed and show in the invoice list until ticked off. Find the invoice with searchInvoices first. Replies with the new note and the invoice's note counts.",
+          "description": "Add a working note to an issued invoice, such as a follow-up to do ('Send the corrected PDF to the client'). Notes are never printed and show in the invoice list until ticked off. Find the invoice with searchInvoices first. Replies with the new note and the invoice's note counts.",
           "inputSchema": {
             "type": "object",
             "properties": {
@@ -1020,7 +1020,7 @@
               },
               "text": {
                 "type": "string",
-                "description": "The note, e.g. 'Send the corrected PDF to Book Sprints'."
+                "description": "The note, e.g. 'Send the corrected PDF to the client'."
               }
             },
             "required": [
@@ -1142,7 +1142,7 @@
         },
         {
           "name": "setNumberFormat",
-          "description": "Set how the invoice counter is written: a pattern with exactly one counter token ({N}, {NN}, {NNN} or longer, zero-padded) and at most one year token ({YYYY} or {YY}), such as PS-{YYYY}-{NNN} or INV-{NNNN}. Changes only how future numbers are written; the counter, its sequence and every issued invoice's label stay as they are. Returns the pattern and the label the next invoice would get.",
+          "description": "Set how the invoice counter is written: a pattern with exactly one counter token ({N}, {NN}, {NNN} or longer, zero-padded) and at most one year token ({YYYY} or {YY}), such as INV-{YYYY}-{NNN} or INV-{NNNN}. Changes only how future numbers are written; the counter, its sequence and every issued invoice's label stay as they are. Returns the pattern and the label the next invoice would get.",
           "inputSchema": {
             "type": "object",
             "properties": {
@@ -1577,7 +1577,7 @@
         },
         {
           "name": "sendAgreement",
-          "description": "Mark a draft as sent for signature and give it its number (e.g. PS-SOW-2026-03). Refused while checks block (placeholders, fee and milestones not adding up, no party). Sending the PDF itself is the person's step (exportAgreementPdf). Replies with a summary (id, number, status, party, fee, section/milestone/bill counts, checks, billing totals), not the wording; call getAgreement for the full agreement.",
+          "description": "Mark a draft as sent for signature and give it its number (e.g. SOW-2026-03). Refused while checks block (placeholders, fee and milestones not adding up, no party). Sending the PDF itself is the person's step (exportAgreementPdf). Replies with a summary (id, number, status, party, fee, section/milestone/bill counts, checks, billing totals), not the wording; call getAgreement for the full agreement.",
           "inputSchema": {
             "type": "object",
             "properties": {

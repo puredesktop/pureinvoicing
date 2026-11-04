@@ -803,7 +803,7 @@ export const domainSchemas = {
       },
       "text": {
         "type": "string",
-        "description": "The note, e.g. 'Send the corrected PDF to Book Sprints'."
+        "description": "The note, e.g. 'Send the corrected PDF to the client'."
       }
     },
     "required": [
