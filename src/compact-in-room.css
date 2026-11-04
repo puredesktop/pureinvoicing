@@ -9,20 +9,20 @@
   --platform-colors-text-secondary: #565a62;
   --platform-colors-text-disabled: #7a7e87;
   --platform-colors-elevated: #ffffff;
-  --platform-colors-divider: #e4e5e8;
+  --platform-colors-divider: #dde1e7;
   --platform-colors-border-strong: #c6c8cd;
   --platform-colors-surface-hover: #f3f4f5;
   --pure-chrome-soft: #565a62;
   --pure-chrome-muted: #565a62;
   --pure-chrome-paper: #ffffff;
-  --pure-chrome-line: #e4e5e8;
+  --pure-chrome-line: #dde1e7;
   --pure-chrome-well: #f3f4f5;
   --glass-panel: #ffffff;
   --glass-panel-strong: #ffffff;
   --glass-popover: #ffffff;
   --glass-edge: transparent;
   --glass-edge-strong: #c6c8cd;
-  --glass-line: #e4e5e8;
+  --glass-line: #dde1e7;
   --glass-well: #f3f4f5;
   --glass-blur: none;
   --pure-success-muted: #e6f4ea;
@@ -65,7 +65,7 @@
   overflow-x: auto;
 }
 [data-compact-bar] [data-compact-total] {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   white-space: nowrap;
 }
@@ -93,7 +93,8 @@
   min-height: 0;
   overflow: auto;
   background: #ffffff;
-  font-size: 13.5px;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
 }
 .invoicing-compact-quiet {
   display: flex;
@@ -107,7 +108,7 @@
 .invoicing-compact-quiet p {
   margin: 0;
   color: var(--d-muted);
-  font-size: 15px;
+  font-size: 13px;
   line-height: 1.5;
 }
 .invoicing-compact-owing {
@@ -130,12 +131,12 @@
   white-space: nowrap;
 }
 .invoicing-compact-clear {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 500;
 }
 .invoicing-compact-late {
   color: var(--d-bad-ink);
-  font-size: 12.5px;
+  font-size: 12px;
 }
 .invoicing-compact-kicker {
   margin: 0;
@@ -184,7 +185,7 @@
   font-size: 12px;
 }
 .invoicing-compact-amount {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
   text-align: right;
   white-space: nowrap;
@@ -214,7 +215,7 @@
   background: #ffffff;
 }
 .invoicing-compact-label {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
   white-space: nowrap;
 }
@@ -230,9 +231,9 @@
 }
 .invoicing-compact-to h2 {
   margin: 0 0 4px;
-  font-size: 19px;
+  font-size: 15px;
   font-weight: 600;
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
   overflow-wrap: anywhere;
 }
 .invoicing-compact-to p {
@@ -256,9 +257,9 @@
 }
 .invoicing-compact-lines th {
   padding: 6px 0 6px 12px;
-  border-bottom: 1px solid #1b1d21;
+  border-bottom: 1px solid #cdd1d7;
   color: var(--d-muted);
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 600;
   text-align: left;
   white-space: nowrap;
@@ -305,8 +306,8 @@
   align-items: baseline;
   margin-top: 3px;
   padding-top: 7px;
-  border-top: 1px solid #1b1d21;
-  font-size: 15px;
+  border-top: 1px solid #cdd1d7;
+  font-size: 13px;
   font-weight: 600;
 }
 .invoicing-compact-grand dt {
@@ -329,8 +330,26 @@
   font-size: 12.5px;
 }
 
-/* Held inside an entry of the room: flat on the paper from the first paint, before the app has said anything. */
-html[data-held-in-room],
-html[data-held-in-room] body {
+/* Flat on white from the first paint, before the app has said anything, in a room entry or on the Personal page. */
+html:has([data-compact-room]),
+html:has([data-compact-room]) body {
   background: #ffffff;
+}
+
+/* The held look: square-ish corners, no tinted blocks, one muted accent, tabular figures. */
+[data-compact-room] [role='alert'] {
+  border-radius: 3px;
+  box-shadow: none;
+}
+[data-compact-room] button,
+[data-compact-room] input,
+[data-compact-room] select {
+  border-radius: 3px;
+  box-shadow: none;
+}
+[data-compact-room] .invoicing-compact-amount,
+[data-compact-room] .invoicing-compact-figure,
+[data-compact-room] .invoicing-compact-lines .num,
+[data-compact-room] .invoicing-compact-totals dd {
+  font-variant-numeric: tabular-nums;
 }
