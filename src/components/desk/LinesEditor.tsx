@@ -11,7 +11,7 @@ const Table = styled.table`
   width: 100%;
   border-collapse: collapse;
   font-size: 12.5px;
-  th { font: 500 10.5px var(--d-mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--d-faint); text-align: left; padding: 4px 6px 8px; border-bottom: 1px solid var(--d-line); white-space: nowrap; }
+  th { font-size: 12px; font-weight: 600; color: var(--n-soft); text-align: left; padding: 4px 6px 8px; border-bottom: 1px solid var(--d-line); white-space: nowrap; }
   td { padding: 4px 3px; border-bottom: 1px solid var(--d-line); vertical-align: top; }
   th.num, td.num { text-align: right; }
   tr.err td { background: var(--d-bad-bg); }
@@ -22,12 +22,12 @@ const Cell = styled.input<{ $num?: boolean }>`
   height: 30px;
   padding: 0 8px;
   border: 1px solid transparent;
-  border-radius: 7px;
+  border-radius: 3px;
   background: transparent;
   font-size: 12.5px;
-  ${({ $num }) => ($num ? 'text-align: right; font-variant-numeric: tabular-nums; font-family: var(--d-mono);' : '')}
+  ${({ $num }) => ($num ? 'text-align: right;' : '')}
   &:hover { border-color: var(--d-line); }
-  &:focus { outline: none; border-color: var(--d-acc); background: var(--d-paper); box-shadow: 0 0 0 3px var(--d-acc-soft); }
+  &:focus { outline: none; border-color: var(--d-acc); background: var(--d-paper); box-shadow: inset 0 0 0 1px var(--d-acc); }
   &::placeholder { color: var(--d-faint); }
 `
 const Desc = styled.textarea`
@@ -36,14 +36,14 @@ const Desc = styled.textarea`
   min-height: 30px;
   padding: 6px 8px;
   border: 1px solid transparent;
-  border-radius: 7px;
+  border-radius: 3px;
   background: transparent;
   font-size: 12.5px;
   line-height: 1.35;
   resize: none;
   field-sizing: content;
   &:hover { border-color: var(--d-line); }
-  &:focus { outline: none; border-color: var(--d-acc); background: var(--d-paper); box-shadow: 0 0 0 3px var(--d-acc-soft); }
+  &:focus { outline: none; border-color: var(--d-acc); background: var(--d-paper); box-shadow: inset 0 0 0 1px var(--d-acc); }
   &::placeholder { color: var(--d-faint); }
 `
 

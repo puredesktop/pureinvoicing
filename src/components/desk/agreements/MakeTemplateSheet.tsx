@@ -169,10 +169,10 @@ const Paper = styled.article`
   .mark.keep { background: none; box-shadow: inset 0 -1px 0 var(--d-line); }
 `
 const Item = styled.div`
-  display: flex; flex-direction: column; gap: 4px; padding: 9px 10px; border-radius: 10px; border: 1px solid var(--d-line); background: var(--d-paper);
+  display: flex; flex-direction: column; gap: 4px; padding: 9px 10px; border-radius: 3px; border: 1px solid var(--d-line); background: var(--d-paper);
   &.field { border-color: color-mix(in srgb, var(--d-info-ink) 30%, transparent); } &.prompt { border-color: color-mix(in srgb, var(--d-warn-ink) 35%, transparent); } &.keep { opacity: .8; }
   .top { display: flex; align-items: center; gap: 6px; min-width: 0; }
   b { font-weight: 600; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
-  select { height: 28px; border: 1px solid var(--d-line); border-radius: 7px; background: var(--d-paper); font: inherit; font-size: 12px; color: var(--d-ink); }
-  input { height: 28px; border: 1px solid var(--d-line); border-radius: 7px; padding: 0 8px; font: inherit; font-size: 12.5px; color: var(--d-ink); background: var(--d-paper); }
+  select { height: 28px; border: 1px solid var(--d-line); border-radius: 3px; background: var(--d-paper); font: inherit; font-size: 12px; color: var(--d-ink); }
+  input { height: 28px; border: 1px solid var(--d-line); border-radius: 3px; padding: 0 8px; font: inherit; font-size: 12.5px; color: var(--d-ink); background: var(--d-paper); }
 `

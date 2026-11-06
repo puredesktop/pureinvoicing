@@ -102,7 +102,7 @@ export function TemplateEditor({ product: p, store, template: t, disabled, onBac
   const total = Math.round(t.milestones.reduce((sum, m) => sum + m.share, 0) * 100) / 100
   return (
     <>
-      <TopBar as="div" style={{ height: 48, borderTop: '1px solid var(--d-line)', background: 'transparent', backdropFilter: 'none' }}>
+      <TopBar as="div" style={{ height: 48, background: 'transparent' }}>
         <Btn $quiet $sm onClick={onBack}><Icon.back />Templates</Btn>
         <span style={{ fontWeight: 600, fontSize: 14 }}>{t.name}</span>
         <Chip $tone="info">{KIND_LABEL[t.kind]} · {t.direction === 'client' ? 'for clients' : 'for contractors'}</Chip>
@@ -271,7 +271,7 @@ function Commit({ value, onCommit, ...rest }: { value: string; onCommit: (value:
 }
 
 const chipCss = `
-  .chip { display: inline-block; font-family: var(--d-ui, system-ui, sans-serif); font-size: .82em; line-height: 1.3; padding: 1px 7px; border-radius: 6px; border: 0; vertical-align: baseline; white-space: nowrap; }
+  .chip { display: inline-block; font-family: var(--d-ui, system-ui, sans-serif); font-size: .82em; line-height: 1.3; padding: 1px 7px; border-radius: 3px; border: 0; vertical-align: baseline; white-space: nowrap; }
   .chip.auto { background: var(--d-info-bg); color: var(--d-info-ink); }
   .chip.ask { background: var(--d-warn-bg); color: var(--d-warn-ink); }
   .chip.unknown { background: var(--d-bad-bg); color: var(--d-bad-ink); }
@@ -281,7 +281,7 @@ const Main = styled.main`
   flex: 1 1 auto; min-width: 0; min-height: 0; overflow: auto; display: flex; flex-direction: column; gap: 12px; padding-right: 4px;
 `
 const Search = styled.label`
-  display: flex; align-items: center; gap: 8px; width: 240px; height: 34px; padding: 0 12px; border-radius: 999px; background: var(--d-paper); border: 1px solid var(--d-line);
+  display: flex; align-items: center; gap: 8px; width: 240px; height: 34px; padding: 0 12px; border-radius: 3px; background: var(--d-paper); border: 1px solid var(--d-line);
   input { border: 0; outline: 0; background: none; font: inherit; font-size: 13px; color: var(--d-ink); flex: 1; min-width: 0; }
   svg { color: var(--d-faint); }
 `
@@ -289,10 +289,10 @@ const Grid = styled.div`
   display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px;
 `
 const Card = styled.article`
-  background: var(--d-paper); border: 1px solid var(--d-line); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 10px;
+  background: var(--d-paper); border: 1px solid var(--d-line); border-radius: 3px; padding: 16px; display: flex; flex-direction: column; gap: 10px;
   &.missing { background: transparent; border-style: dashed; }
   .tags { display: flex; gap: 6px; flex-wrap: wrap; }
-  .tag { padding: 2px 8px; border-radius: 999px; font-size: 11.5px; }
+  .tag { padding: 2px 8px; border-radius: 3px; font-size: 11.5px; }
   .name { font-size: 15.5px; font-weight: 600; }
   dl { margin: 0; display: flex; flex-direction: column; gap: 4px; font-size: 12.5px; }
   dl div { display: flex; gap: 8px; } dt { width: 66px; flex: 0 0 auto; color: var(--d-faint); } dd { margin: 0; }
@@ -300,7 +300,7 @@ const Card = styled.article`
 `
 const Outline = styled.nav`
   flex: 0 0 220px; display: flex; flex-direction: column; gap: 1px; padding: 14px 10px; border-right: 1px solid var(--d-line); overflow: auto; min-height: 0;
-  a { display: flex; align-items: center; gap: 9px; padding: 6px 8px; border-radius: 8px; color: var(--d-ink); text-decoration: none; font-size: 13px; }
+  a { display: flex; align-items: center; gap: 9px; padding: 6px 8px; border-radius: 3px; color: var(--d-ink); text-decoration: none; font-size: 13px; }
   a:hover { background: var(--d-well); }
   .n { font-size: 11px; color: var(--d-faint); width: 16px; }
   .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -315,20 +315,20 @@ const Paper = styled.article`
   ${chipCss}
   .letterhead { display: flex; gap: 10px; padding-bottom: 10px; border-bottom: 2px solid var(--d-acc); font-family: var(--d-mono); font-size: 11px; color: #5f6b76; }
   .kind { letter-spacing: .14em; text-transform: uppercase; }
-  .title { margin: 8px 0 0; font-family: inherit; font-size: 24px; font-weight: 600; line-height: 1.3; text-align: left; border: 0; background: none; padding: 2px 4px; margin-left: -4px; color: inherit; border-radius: 6px; }
+  .title { margin: 8px 0 0; font-family: inherit; font-size: 24px; font-weight: 600; line-height: 1.3; text-align: left; border: 0; background: none; padding: 2px 4px; margin-left: -4px; color: inherit; border-radius: 3px; }
   button.title:hover:not(:disabled), .show:hover:not(:disabled) { background: #f6f9fa; cursor: text; }
-  section { margin: 0 -12px; border-radius: 10px; scroll-margin-top: 20px; }
+  section { margin: 0 -12px; border-radius: 3px; scroll-margin-top: 20px; }
   section.editing { box-shadow: 0 0 0 2px var(--d-acc-soft); background: #fbfdfb; }
-  .show { display: block; width: 100%; text-align: left; font: inherit; color: inherit; border: 0; background: none; padding: 8px 12px; border-radius: 10px; }
+  .show { display: block; width: 100%; text-align: left; font: inherit; color: inherit; border: 0; background: none; padding: 8px 12px; border-radius: 3px; }
   .show:disabled { cursor: default; }
   h2 { margin: 0 0 4px; font-size: 15.5px; font-weight: 600; display: flex; gap: 8px; align-items: baseline; }
   .num { font-family: var(--d-mono); font-size: 11px; color: var(--d-acc-ink, var(--d-acc)); min-width: 16px; }
   .body p { margin: 0 0 8px; white-space: pre-wrap; }
   table.schedule { width: 100%; border-collapse: collapse; font-size: 13px; } .schedule td { padding: 4px 0; border-bottom: 1px solid #e3e8ec; } .schedule .n { text-align: right; font-family: var(--d-mono); }
   .editor { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; }
-  .editor .heading { font: inherit; font-size: 16px; font-weight: 600; border: 1px solid #e3e8ec; border-radius: 6px; padding: 4px 8px; color: inherit; }
-  .editor textarea { font: inherit; line-height: 1.7; border: 1px solid #e3e8ec; border-radius: 6px; padding: 8px 10px; resize: none; overflow: hidden; color: inherit; }
-  .editor .heading:focus, .editor textarea:focus { outline: none; border-color: var(--d-acc); box-shadow: 0 0 0 3px var(--d-acc-soft); }
+  .editor .heading { font: inherit; font-size: 16px; font-weight: 600; border: 1px solid #e3e8ec; border-radius: 3px; padding: 4px 8px; color: inherit; }
+  .editor textarea { font: inherit; line-height: 1.7; border: 1px solid #e3e8ec; border-radius: 3px; padding: 8px 10px; resize: none; overflow: hidden; color: inherit; }
+  .editor .heading:focus, .editor textarea:focus { outline: none; border-color: var(--d-acc); box-shadow: inset 0 0 0 1px var(--d-acc); }
   .insert { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; font-family: var(--d-ui, system-ui, sans-serif); }
   .insert .chip, .insert .prompt { cursor: pointer; font-size: 12px; border: 0; font-family: inherit; }
 `
@@ -337,10 +337,10 @@ const FieldRow = styled.div`
   ${chipCss}
   input { height: 28px; font-size: 12.5px; padding: 0 8px; min-width: 0; flex: 1; }
   input.share { flex: 0 0 56px; text-align: right; }
-  select { height: 28px; border: 1px solid var(--d-line); border-radius: 7px; background: var(--d-paper); font: inherit; font-size: 12px; color: var(--d-ink); max-width: 150px; }
+  select { height: 28px; border: 1px solid var(--d-line); border-radius: 3px; background: var(--d-paper); font: inherit; font-size: 12px; color: var(--d-ink); max-width: 150px; }
   .chip { flex: 0 0 auto; max-width: 110px; overflow: hidden; text-overflow: ellipsis; }
-  .rm { border: 0; background: none; color: var(--d-faint); padding: 3px; cursor: pointer; border-radius: 6px; } .rm svg { width: 12px; height: 12px; }
+  .rm { border: 0; background: none; color: var(--d-faint); padding: 3px; cursor: pointer; border-radius: 3px; } .rm svg { width: 12px; height: 12px; }
 `
 const Legend = styled.span<{ $tone: 'auto' | 'ask' }>`
-  padding: 0 5px; border-radius: 5px; background: ${({ $tone }) => ($tone === 'auto' ? 'var(--d-info-bg)' : 'var(--d-warn-bg)')}; color: ${({ $tone }) => ($tone === 'auto' ? 'var(--d-info-ink)' : 'var(--d-warn-ink)')};
+  padding: 0 5px; border-radius: 3px; background: ${({ $tone }) => ($tone === 'auto' ? 'var(--d-info-bg)' : 'var(--d-warn-bg)')}; color: ${({ $tone }) => ($tone === 'auto' ? 'var(--d-info-ink)' : 'var(--d-warn-ink)')};
 `

@@ -19,7 +19,7 @@ import { Area, Avatar, Body, Btn, Card, Chip, Field, Grid, Hint, Input, List, Me
 /** The directory: every client with what they owe, and one client's details and invoices. */
 const TestOverlay = styled.div`
   position: fixed; inset: 0; z-index: 60; background: rgba(15, 20, 30, .35); display: flex; justify-content: center; padding: 28px 16px;
-  .sheet { width: min(860px, 100%); display: flex; flex-direction: column; gap: 12px; padding: 18px 20px; border-radius: 16px; background: var(--d-surface, #fff); color: var(--d-ink, #171717); box-shadow: 0 20px 60px rgba(0,0,0,.25); min-height: 0; }
+  .sheet { width: min(860px, 100%); display: flex; flex-direction: column; gap: 12px; padding: 18px 20px; border-radius: 3px; background: var(--n-sheet); color: var(--n-ink); box-shadow: 0 8px 28px rgb(0 0 0 / 0.22); min-height: 0; }
   .head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
   .head b { display: block; font-size: 15px; }
 `
@@ -42,19 +42,19 @@ export function ClientsView({ product: p, directory: d, store, disabled }: { pro
           <SearchBox style={{ minWidth: 0, flex: 1 }}><Icon.search /><input placeholder="Search clients" value={d.query} onChange={event => d.search(event.target.value)} /></SearchBox>
           <Btn $acc $sm disabled={disabled || !!editing} onClick={d.create}><Icon.plus />Client</Btn>
         </div>
-        <div style={{ overflow: 'auto', display: 'flex', flexDirection: 'column', gap: 6, padding: '0 10px 10px' }}>
+        <div style={{ overflow: 'auto', display: 'flex', flexDirection: 'column', borderTop: '1px solid var(--n-line)' }}>
           {visible.map(candidate => {
             const s = statsFor(candidate.id)
             return (
-              <Card key={candidate.id} {...agentRefs(candidate.name, clientRefs(candidate.id))} style={{ padding: '10px 12px', display: 'flex', gap: 12, alignItems: 'center', cursor: 'pointer', ...(candidate.id === selectedId ? { borderColor: 'var(--d-acc)', boxShadow: '0 0 0 3px var(--d-acc-soft)' } : {}) }} onClick={() => p.selectClient(candidate.id)}>
-                <Avatar $hue={hueOf(candidate.name)} $size={32}>{initials(candidate.name)}</Avatar>
+              <div key={candidate.id} {...agentRefs(candidate.name, clientRefs(candidate.id))} aria-selected={candidate.id === selectedId} style={{ padding: '9px 12px', display: 'flex', gap: 12, alignItems: 'center', cursor: 'pointer', borderBottom: '1px solid var(--n-fence)', ...(candidate.id === selectedId ? { background: 'var(--p-chosen)', boxShadow: 'var(--p-chosen-edge)' } : {}) }} onClick={() => p.selectClient(candidate.id)}>
+                <Avatar $hue={hueOf(candidate.name)} $size={28}>{initials(candidate.name)}</Avatar>
                 <div style={{ minWidth: 0, flex: 1 }}><div style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{candidate.name}</div><Hint>{s ? `${s.count} invoice${s.count === 1 ? '' : 's'} · ${formatMoney(s.invoiced, s.currency)}${s.lastIssuedAt ? ` · last ${shortDate(s.lastIssuedAt.slice(0, 10))}` : ''}` : 'No invoices yet'}</Hint></div>
-                {s?.overdueCount ? <Chip $tone="bad">{s.overdueCount} overdue</Chip> : s && Number(s.outstanding) > 0 ? <Chip $tone="warn">open</Chip> : s ? <Chip $tone="ok">settled</Chip> : null}
-              </Card>
+                {s?.overdueCount ? <Chip $tone="bad">{s.overdueCount} overdue</Chip> : s && Number(s.outstanding) > 0 ? <Chip $tone="info">open</Chip> : s ? <Chip $tone="ok">settled</Chip> : null}
+              </div>
             )
           })}
           {!visible.length ? <Meta style={{ padding: '10px 4px' }}>{needle ? 'Nothing matches.' : 'No clients yet.'}</Meta> : null}
-          <Slot><Icon.plus />A recipient typed on any draft can be saved here in one click.</Slot>
+          <Slot style={{ margin: 10 }}><Icon.plus />A recipient typed on any draft can be saved here in one click.</Slot>
         </div>
       </Panel>
       <Panel $strong style={{ flex: '1 1 auto', overflow: 'auto' }}>

@@ -69,15 +69,15 @@ export function EmailsInput({ value, onChange, onPickPerson, placeholder = 'Name
 
 const Box = styled.div`
   position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 4px; min-height: 32px; box-sizing: border-box; padding: 3px 6px;
-  border: 1px solid var(--d-line); border-radius: 8px; background: var(--d-paper); color: var(--d-ink); cursor: text;
-  &:focus-within { border-color: var(--d-acc); box-shadow: 0 0 0 3px var(--d-acc-soft); }
-  .chip { display: inline-flex; align-items: center; gap: 2px; max-width: 100%; padding: 2px 4px 2px 8px; border-radius: 999px; font-size: 12.5px; background: var(--d-acc-soft); color: var(--d-ink); overflow-wrap: anywhere; }
+  border: 1px solid var(--d-line); border-radius: 3px; background: var(--d-paper); color: var(--d-ink); cursor: text;
+  &:focus-within { border-color: var(--d-acc); box-shadow: inset 0 0 0 1px var(--d-acc); }
+  .chip { display: inline-flex; align-items: center; gap: 2px; max-width: 100%; padding: 2px 4px 2px 8px; border-radius: 3px; font-size: 12.5px; background: var(--d-acc-soft); color: var(--d-ink); overflow-wrap: anywhere; }
   .chip.bad { background: var(--d-warn-bg); color: var(--d-warn-ink); }
-  .chip button { border: 0; background: none; color: inherit; opacity: .6; cursor: pointer; font: inherit; font-size: 14px; line-height: 1; padding: 0 4px; border-radius: 999px; }
+  .chip button { border: 0; background: none; color: inherit; opacity: .6; cursor: pointer; font: inherit; font-size: 14px; line-height: 1; padding: 0 4px; border-radius: 3px; }
   .chip button:hover { opacity: 1; }
   .people { position: absolute; z-index: 30; left: -1px; right: -1px; top: calc(100% + 4px); margin: 0; padding: 4px; list-style: none;
-    background: var(--d-paper); color: var(--d-ink); border: 1px solid var(--d-line); border-radius: 10px; box-shadow: 0 10px 28px rgba(0, 0, 0, .14); }
-  .people li[role='option'] { display: flex; flex-direction: column; gap: 1px; padding: 6px 9px; border-radius: 7px; cursor: pointer; }
+    background: var(--d-paper); color: var(--d-ink); border: 1px solid var(--d-line); border-radius: 3px; box-shadow: 0 10px 28px rgba(0, 0, 0, .14); }
+  .people li[role='option'] { display: flex; flex-direction: column; gap: 1px; padding: 6px 9px; border-radius: 3px; cursor: pointer; }
   .people li[role='option'] b { font-size: 13px; font-weight: 600; }
   .people li[role='option'] span { font-size: 12px; color: var(--d-muted); overflow-wrap: anywhere; }
   .people li[aria-selected='true'] { background: var(--d-acc-soft); }

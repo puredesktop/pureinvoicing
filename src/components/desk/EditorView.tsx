@@ -52,7 +52,7 @@ export function EditorView({ product: p, directory: d, store, disabled, compact 
   const previewDiagnostics = [...(p.preview?.diagnostics.filter(candidate => !candidate.field.startsWith('pages.')) ?? []), ...calculation.warnings]
   return (
     <>
-      <TopBar as="div" {...bar} style={{ height: 44, borderTop: '1px solid var(--d-line)', background: 'transparent', backdropFilter: 'none' }}>
+      <TopBar as="div" {...bar} style={{ height: 44, background: 'transparent' }}>
         {compact ? <Btn $quiet $sm onClick={() => p.openInvoice(null)}><Icon.back />Back</Btn> : null}
         <Mono style={{ fontSize: 14, fontWeight: 500 }}>{historical && originalNumber ? `#${originalNumber}` : p.label}</Mono>
         <Chip $tone={correction ? 'warn' : historical ? 'info' : 'neutral'}>{compact ? (correction ? 'Correction' : 'Draft') : correction ? 'Correction · same number, new version' : historical ? 'Registering a past invoice' : 'Draft · number assigned when issued'}</Chip>

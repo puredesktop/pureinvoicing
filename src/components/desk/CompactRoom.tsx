@@ -113,7 +113,7 @@ function CompactInvoice({ product: p, store }: Pick<CompactRoomProps, 'product' 
         <Btn $quiet $sm onClick={() => p.openInvoice(null)}><Icon.back />Back</Btn>
         <Mono className="invoicing-compact-label">{p.label}</Mono>
         <StandingChip mark={standing.mark} daysOverdue={standing.daysOverdue} paidAt={invoice.marks?.paidAt} sentAt={invoice.marks?.sentAt} />
-        {invoice.historical ? <Chip $tone="info">Historical</Chip> : null}
+        {invoice.historical ? <Chip>Historical</Chip> : null}
         {superseded || invoice.versions.length > 1 ? <Chip>{superseded ? `Superseded · v${number}` : `v${number}`}</Chip> : null}
       </div>
       <div className="invoicing-compact-read">

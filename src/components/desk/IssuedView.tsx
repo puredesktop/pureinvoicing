@@ -36,11 +36,11 @@ export function IssuedView({ product: p, store, disabled, compact = false }: { p
   return (
     <>
       {paying ? <PaymentDialog target={{ id: invoice.id, numberText: label, client: c.recipient.name || 'Unnamed client', total: calculation.total, currency: c.currency ?? undefined, dueDate: standing.dueDate ?? undefined, marks: invoice.marks }} disabled={disabled} onSave={(request, id) => void p.markInvoice(request, id)} onClose={() => setPaying(false)} /> : null}
-      <TopBar as="div" style={{ height: 44, borderTop: '1px solid var(--d-line)', background: 'transparent', backdropFilter: 'none' }}>
+      <TopBar as="div" style={{ height: 44, background: 'transparent' }}>
         <Mono style={{ fontSize: 14, fontWeight: 500 }}>{label}</Mono>
         <StandingChip mark={standing.mark} daysOverdue={standing.daysOverdue} paidAt={invoice.marks?.paidAt} sentAt={invoice.marks?.sentAt} />
         <Chip>{superseded ? `Superseded · v${versionIndex}` : `Issued ${shortDate(version.issuedAt.slice(0, 10))} · v${versionIndex}`}</Chip>
-        {invoice.historical ? <Chip $tone="info">Historical</Chip> : null}
+        {invoice.historical ? <Chip>Historical</Chip> : null}
         <span style={{ flex: 1 }} />
         {!superseded && standing.mark !== 'paid' ? <Btn disabled={disabled} onClick={() => setPaying(true)}>Mark paid</Btn> : null}
         {!superseded && !invoice.marks?.sentAt ? <Btn disabled={disabled} onClick={() => setMarking('sent')}>Mark sent</Btn> : null}

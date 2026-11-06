@@ -105,9 +105,9 @@ export function DocumentsList({ documents, disabled, onLink, onOpen, onUnlink, e
 const Notes = styled.div`
   display: flex; flex-direction: column; gap: 8px;
   ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
-  li { display: flex; align-items: flex-start; gap: 10px; padding: 6px 4px; border-radius: 8px; }
+  li { display: flex; align-items: flex-start; gap: 10px; padding: 6px 4px; border-radius: 3px; }
   li:hover { background: var(--d-well); }
-  .tick { flex: 0 0 18px; width: 18px; height: 18px; margin-top: 1px; border-radius: 999px; border: 1.5px solid var(--d-faint); background: none; padding: 0; display: grid; place-items: center; cursor: pointer; color: var(--d-paper); }
+  .tick { flex: 0 0 18px; width: 18px; height: 18px; margin-top: 1px; border-radius: 3px; border: 1.5px solid var(--d-faint); background: none; padding: 0; display: grid; place-items: center; cursor: pointer; color: var(--d-paper); }
   .tick:hover { border-color: var(--d-acc); }
   .tick svg { width: 11px; height: 11px; }
   li.done .tick { background: var(--d-ok-ink); border-color: var(--d-ok-ink); }
@@ -115,25 +115,25 @@ const Notes = styled.div`
   .body span { font-size: 13px; line-height: 1.4; overflow-wrap: anywhere; }
   .body small { font-size: 11px; color: var(--d-faint); }
   li.done .body span { color: var(--d-muted); text-decoration: line-through; text-decoration-color: var(--d-faint); }
-  .rm { border: 0; background: none; color: var(--d-faint); cursor: pointer; padding: 2px; border-radius: 6px; opacity: 0; }
+  .rm { border: 0; background: none; color: var(--d-faint); cursor: pointer; padding: 2px; border-radius: 3px; opacity: 1; }
   li:hover .rm, .rm:focus-visible { opacity: 1; }
   .rm svg { width: 13px; height: 13px; }
   .add { display: flex; gap: 6px; }
-  .add input { flex: 1; min-width: 0; height: 30px; padding: 0 10px; border-radius: 8px; border: 1px solid var(--d-line); background: var(--d-paper); color: var(--d-ink); font: inherit; font-size: 13px; }
-  .add input:focus { outline: none; border-color: var(--d-acc); box-shadow: 0 0 0 3px var(--d-acc-soft); }
+  .add input { flex: 1; min-width: 0; height: 30px; padding: 0 10px; border-radius: 3px; border: 1px solid var(--d-line); background: var(--d-paper); color: var(--d-ink); font: inherit; font-size: 13px; }
+  .add input:focus { outline: none; border-color: var(--d-acc); box-shadow: inset 0 0 0 1px var(--d-acc); }
   .fold { align-self: flex-start; border: 0; background: none; padding: 2px 4px; color: var(--d-muted); font: inherit; font-size: 12px; cursor: pointer; }
 `
 const Docs = styled.div`
   display: flex; flex-direction: column; gap: 8px;
   ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
-  li { display: flex; align-items: center; gap: 4px; border-radius: 8px; }
+  li { display: flex; align-items: center; gap: 4px; border-radius: 3px; }
   li:hover { background: var(--d-well); }
   .open { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; border: 0; background: none; padding: 6px 4px; color: var(--d-ink); font: inherit; text-align: left; cursor: pointer; }
   .open svg { flex: 0 0 auto; color: var(--d-muted); }
   .name { flex: 1; min-width: 0; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .open:hover .name { color: var(--d-acc-ink, var(--d-acc)); text-decoration: underline; text-underline-offset: 2px; }
   .kind { flex: 0 0 auto; font-size: 11px; color: var(--d-muted); }
-  .rm { border: 0; background: none; color: var(--d-faint); cursor: pointer; padding: 4px; border-radius: 6px; opacity: 0; }
+  .rm { border: 0; background: none; color: var(--d-faint); cursor: pointer; padding: 4px; border-radius: 3px; opacity: 1; }
   li:hover .rm, .rm:focus-visible { opacity: 1; }
   .rm svg { width: 13px; height: 13px; }
   .link { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
