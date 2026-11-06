@@ -51,7 +51,7 @@ export function whenWords(iso: string): string {
 }
 
 export function Money({ amount, currency, strong }: { amount: string; currency: string | null; strong?: boolean }): React.ReactElement {
-  return <span style={{ fontVariantNumeric: 'tabular-nums', fontWeight: strong ? 600 : undefined }}>{formatMoney(amount, currency)}</span>
+  return <span style={{ fontWeight: strong ? 600 : undefined }}>{formatMoney(amount, currency)}</span>
 }
 
 export { longDate }

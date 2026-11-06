@@ -1,5 +1,6 @@
 import { createRoot } from 'react-dom/client'
 import { App } from './App'
+import { InvoicingStyles } from './ui/styles'
 import './compact-in-room.css'
 
 // held inside another app's page: it lies flat in that page rather than as a page of its own
@@ -17,4 +18,9 @@ if (!root) {
   throw new Error('Root element #root not found')
 }
 
-createRoot(root).render(<App />)
+createRoot(root).render(
+  <>
+    <InvoicingStyles />
+    <App />
+  </>,
+)

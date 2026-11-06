@@ -1,40 +1,41 @@
 import { styled, css } from 'styled-components'
+import { primaryLook, quiet, quietLabel, selectedRow, statusLabel, type StatusTone } from '../../ui/styles'
 
 /**
- * The desk look: frosted panels over the PureDesktop wallpaper, paper cards
- * for anything read, the shell's chrome measures and colours throughout.
- * Every value binds to a shell token. The fallbacks exist because this app
- * ships against the public SDK and may meet a shell that predates a token;
- * they are derived from the platform ramp, never a second palette.
+ * The desk look: white sheets on a neutral grey ground, ruled with hairlines,
+ * square corners, no shadows on rows. Every value binds to the app's own
+ * neutral (--n-*) and palette (--p-*) tokens from ui/styles, so light and dark
+ * follow the desk. Invoice pages themselves stay white paper: they are what the
+ * client receives.
  */
 export const Desk = styled.div`
-  --d-acc: var(--pure-chrome-accent, var(--platform-colors-accent));
-  --d-acc-ink: color-mix(in oklab, var(--d-acc) 72%, var(--platform-colors-text));
-  --d-acc-soft: color-mix(in srgb, var(--d-acc) 12%, transparent);
-  --d-on-acc: var(--pure-chrome-on-accent, var(--platform-colors-text-inverse));
-  --d-ink: var(--platform-colors-text);
-  --d-soft: var(--pure-chrome-soft, var(--platform-colors-text-secondary));
-  --d-muted: var(--pure-chrome-muted, var(--platform-colors-text-secondary));
-  --d-faint: var(--platform-colors-text-disabled);
-  --d-paper: var(--pure-chrome-paper, var(--platform-colors-elevated));
-  --d-panel: var(--glass-panel, color-mix(in srgb, var(--platform-colors-elevated) 62%, transparent));
-  --d-panel-strong: var(--glass-panel-strong, color-mix(in srgb, var(--platform-colors-elevated) 80%, transparent));
-  --d-popover: var(--glass-popover, var(--platform-colors-elevated));
-  --d-edge: var(--glass-edge, color-mix(in srgb, var(--platform-colors-elevated) 85%, transparent));
-  --d-edge-strong: var(--glass-edge-strong, var(--platform-colors-border-strong));
-  --d-line: var(--glass-line, var(--pure-chrome-line, var(--platform-colors-divider)));
-  --d-well: var(--glass-well, var(--pure-chrome-well, var(--platform-colors-surface-hover)));
-  --d-blur: var(--glass-blur, blur(24px) saturate(140%));
-  --d-shadow-card: 0 1px 2px rgba(16, 22, 40, 0.06), 0 10px 22px -16px rgba(16, 22, 40, 0.35);
-  --d-shadow-float: 0 18px 44px rgba(23, 26, 31, 0.22);
-  --d-ok-bg: var(--pure-success-muted, var(--platform-colors-success-muted));
-  --d-ok-ink: var(--pure-success-text, var(--platform-colors-success-text));
-  --d-warn-bg: var(--pure-attention-muted, var(--platform-colors-warning-muted));
-  --d-warn-ink: var(--pure-attention-text, var(--platform-colors-warning-text));
-  --d-bad-bg: var(--pure-danger-muted, var(--platform-colors-danger-muted));
-  --d-bad-ink: var(--pure-danger-text, var(--platform-colors-danger-text));
-  --d-info-bg: var(--pure-info-muted, var(--platform-colors-info-muted));
-  --d-info-ink: var(--pure-info-text, var(--platform-colors-info-text));
+  --d-acc: var(--p-text);
+  --d-acc-ink: var(--p-deep);
+  --d-acc-soft: var(--p-chosen);
+  --d-on-acc: var(--p-on-text);
+  --d-ink: var(--n-ink);
+  --d-soft: var(--n-soft);
+  --d-muted: var(--n-faint);
+  --d-faint: var(--n-faint);
+  --d-paper: var(--n-sheet);
+  --d-panel: var(--n-sheet);
+  --d-panel-strong: var(--n-panel);
+  --d-popover: var(--n-sheet);
+  --d-edge: var(--n-line);
+  --d-edge-strong: var(--n-strong);
+  --d-line: var(--n-line);
+  --d-well: var(--n-hover);
+  --d-blur: none;
+  --d-shadow-card: none;
+  --d-shadow-float: 0 2px 8px rgb(0 0 0 / 0.14);
+  --d-ok-bg: var(--n-panel);
+  --d-ok-ink: var(--p-done-text);
+  --d-warn-bg: var(--n-panel);
+  --d-warn-ink: var(--p-needs-you-text);
+  --d-bad-bg: var(--n-panel);
+  --d-bad-ink: var(--p-failed-text);
+  --d-info-bg: var(--n-panel);
+  --d-info-ink: var(--p-working-text);
   --d-mono: var(--platform-typography-font-family-mono, ui-monospace, monospace);
   --d-font: var(--platform-typography-font-family);
 
@@ -54,10 +55,8 @@ export const Desk = styled.div`
 `
 
 const frost = css`
-  background: var(--d-panel);
-  border: 1px solid var(--d-edge);
-  backdrop-filter: var(--d-blur);
-  -webkit-backdrop-filter: var(--d-blur);
+  background: var(--n-sheet);
+  border: 1px solid var(--n-line);
 `
 
 export const TopBar = styled.header`
@@ -84,22 +83,20 @@ export const Wordmark = styled.span`
 export const Tabs = styled.div`
   display: inline-flex;
   gap: 2px;
-  padding: 3px;
-  border-radius: 999px;
-  background: var(--d-well);
 `
 export const Tab = styled.button<{ $on?: boolean }>`
-  height: 26px;
+  height: 28px;
   padding: 0 12px;
   border: 0;
-  border-radius: 999px;
-  background: ${({ $on }) => ($on ? 'var(--d-paper)' : 'transparent')};
-  color: ${({ $on }) => ($on ? 'var(--d-ink)' : 'var(--d-soft)')};
+  border-radius: 3px;
+  background: transparent;
+  color: ${({ $on }) => ($on ? 'var(--n-ink)' : 'var(--n-soft)')};
   font-weight: ${({ $on }) => ($on ? 600 : 500)};
   font-size: 12.5px;
-  box-shadow: ${({ $on }) => ($on ? '0 1px 2px rgba(16, 22, 40, 0.08)' : 'none')};
   cursor: pointer;
   white-space: nowrap;
+  &:hover { background: var(--n-hover); }
+  ${({ $on }) => ($on ? css`${selectedRow} border-radius: 3px;` : '')}
 `
 export const SearchBox = styled.label`
   display: flex;
@@ -108,68 +105,37 @@ export const SearchBox = styled.label`
   height: 30px;
   padding: 0 10px;
   min-width: 240px;
-  border-radius: 9px;
-  border: 1px solid var(--d-line);
-  background: color-mix(in srgb, var(--d-paper) 55%, transparent);
+  border-radius: 3px;
+  border: 1px solid var(--n-line);
+  background: var(--n-sheet);
   color: var(--d-muted);
   input { flex: 1; min-width: 0; border: 0; background: transparent; outline: none; font-size: 12.5px; color: var(--d-ink); &::placeholder { color: var(--d-muted); } }
   kbd { font: 500 10.5px var(--d-mono); color: var(--d-faint); }
   &:focus-within { border-color: var(--d-acc); }
 `
 export const Btn = styled.button<{ $acc?: boolean; $quiet?: boolean; $danger?: boolean; $sm?: boolean }>`
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  height: ${({ $sm }) => ($sm ? '26px' : '30px')};
-  padding: 0 ${({ $sm }) => ($sm ? '9px' : '12px')};
-  border-radius: 8px;
-  border: 1px solid ${({ $acc, $quiet }) => ($acc ? 'var(--d-acc)' : $quiet ? 'transparent' : 'var(--d-line)')};
-  background: ${({ $acc, $quiet }) => ($acc ? 'var(--d-acc)' : $quiet ? 'transparent' : 'var(--d-paper)')};
-  color: ${({ $acc, $quiet, $danger }) => ($acc ? 'var(--d-on-acc)' : $danger ? 'var(--d-bad-ink)' : $quiet ? 'var(--d-soft)' : 'var(--d-ink)')};
+  ${quiet}
+  height: ${({ $sm }) => ($sm ? '26px' : '28px')};
+  padding: 0 ${({ $sm }) => ($sm ? '9px' : '11px')};
   font-size: ${({ $sm }) => ($sm ? '12px' : '12.5px')};
-  font-weight: ${({ $acc }) => ($acc ? 600 : 500)};
-  white-space: nowrap;
-  cursor: pointer;
-  &:hover:not(:disabled) { border-color: ${({ $acc }) => ($acc ? 'var(--d-acc)' : 'var(--d-edge-strong)')}; ${({ $quiet }) => ($quiet ? 'background: var(--d-well);' : '')} }
-  &:disabled { opacity: 0.5; cursor: default; }
+  ${({ $danger }) => ($danger ? 'color: var(--p-failed-text);' : '')}
+  ${({ $acc }) => ($acc ? primaryLook : '')}
   kbd { font: 500 10.5px var(--d-mono); opacity: 0.75; }
   svg { width: 15px; height: 15px; flex: 0 0 auto; }
 `
 export const Pill = styled.button<{ $on?: boolean; $quiet?: boolean }>`
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  height: 28px;
-  padding: 0 11px;
-  border-radius: 999px;
-  border: 1px solid ${({ $on, $quiet }) => ($on ? 'var(--d-acc)' : $quiet ? 'transparent' : 'var(--d-line)')};
-  background: ${({ $on, $quiet }) => ($on ? 'var(--d-acc)' : $quiet ? 'transparent' : 'color-mix(in srgb, var(--d-paper) 55%, transparent)')};
-  color: ${({ $on, $quiet }) => ($on ? 'var(--d-on-acc)' : $quiet ? 'var(--d-soft)' : 'var(--d-ink)')};
-  font-size: 12.5px;
+  ${quiet}
   font-weight: 500;
-  white-space: nowrap;
-  cursor: pointer;
-  &:hover:not(:disabled) { border-color: ${({ $on }) => ($on ? 'var(--d-acc)' : 'var(--d-edge-strong)')}; }
-  &:disabled { opacity: 0.5; cursor: default; }
+  ${({ $on }) => ($on ? css`${selectedRow} border-radius: 3px; border-color: transparent; font-weight: 600;` : '')}
   .caret { font-size: 9px; opacity: 0.6; }
 `
 export type Tone = 'neutral' | 'ok' | 'warn' | 'bad' | 'info' | 'acc'
-const toneBg: Record<Tone, string> = { neutral: 'var(--d-well)', ok: 'var(--d-ok-bg)', warn: 'var(--d-warn-bg)', bad: 'var(--d-bad-bg)', info: 'var(--d-info-bg)', acc: 'var(--d-acc-soft)' }
 const toneInk: Record<Tone, string> = { neutral: 'var(--d-soft)', ok: 'var(--d-ok-ink)', warn: 'var(--d-warn-ink)', bad: 'var(--d-bad-ink)', info: 'var(--d-info-ink)', acc: 'var(--d-acc-ink)' }
+const toneLabel: Record<Exclude<Tone, 'neutral' | 'acc'>, StatusTone> = { ok: 'done', warn: 'needs-you', bad: 'failed', info: 'working' }
+/** A label says something: a flat tag in the colour of what it says. Grey for a plain fact; the app's colour marks a quiet one. */
 export const Chip = styled.span<{ $tone?: Tone }>`
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  height: 20px;
-  padding: 0 8px;
-  border-radius: 6px;
-  background: ${({ $tone = 'neutral' }) => toneBg[$tone]};
-  color: ${({ $tone = 'neutral' }) => toneInk[$tone]};
-  font-size: 11px;
-  font-weight: 500;
-  white-space: nowrap;
-  i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: 0.8; }
+  ${({ $tone = 'neutral' }) => ($tone === 'neutral' ? statusLabel('idle') : $tone === 'acc' ? css`${quietLabel} --lab-colour: var(--p-text);` : statusLabel(toneLabel[$tone]))}
+  i { display: none; }
 `
 export const Body = styled.div`
   display: flex;
@@ -198,29 +164,28 @@ export const RailRow = styled.button<{ $on?: boolean }>`
   width: 100%;
   padding: 0 8px;
   border: 0;
-  border-radius: 8px;
-  background: ${({ $on }) => ($on ? 'var(--d-paper)' : 'transparent')};
+  border-radius: 0;
+  background: transparent;
   font-size: 13px;
   font-weight: ${({ $on }) => ($on ? 600 : 500)};
   text-align: left;
   cursor: pointer;
-  box-shadow: ${({ $on }) => ($on ? '0 1px 2px rgba(16, 22, 40, 0.06)' : 'none')};
-  &:hover:not(:disabled) { ${({ $on }) => ($on ? '' : 'background: var(--d-well);')} }
+  &:hover:not(:disabled) { background: var(--n-hover); }
+  ${({ $on }) => ($on ? selectedRow : '')}
   .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  small { font: 500 11px var(--d-mono); color: var(--d-faint); }
+  small { font-size: 11.5px; color: var(--n-faint); }
 `
 export const Dot = styled.span<{ $color?: string }>`
   width: 8px;
   height: 8px;
-  border-radius: 50%;
+  border-radius: 1px;
   flex: 0 0 auto;
   background: ${({ $color }) => $color ?? 'var(--d-acc)'};
 `
 export const Kicker = styled.span`
-  font: 500 10px var(--d-mono);
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--d-faint);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--n-soft);
 `
 export const Meta = styled.span`
   font-size: 12px;
@@ -230,9 +195,9 @@ export const Hint = styled.span<{ $err?: boolean }>`
   font-size: 11.5px;
   color: ${({ $err }) => ($err ? 'var(--d-bad-ink)' : 'var(--d-muted)')};
 `
+/** Numbers, in the sans: amounts line up on their right edge, not by tabular figures, which this face spaces out around the separators. */
 export const Mono = styled.span`
-  font-family: var(--d-mono);
-  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 `
 export const Main = styled.main`
   flex: 1 1 auto;
@@ -244,18 +209,17 @@ export const Main = styled.main`
 `
 export const Panel = styled.section<{ $strong?: boolean }>`
   ${frost}
-  ${({ $strong }) => ($strong ? 'background: var(--d-panel-strong);' : '')}
-  border-radius: 14px;
+  ${({ $strong }) => ($strong ? 'background: var(--n-panel);' : '')}
+  border-radius: 3px;
   display: flex;
   flex-direction: column;
   min-width: 0;
   min-height: 0;
 `
 export const Card = styled.div`
-  background: var(--d-paper);
-  border: 1px solid var(--d-edge);
-  border-radius: 12px;
-  box-shadow: var(--d-shadow-card);
+  background: var(--n-sheet);
+  border: 1px solid var(--n-line);
+  border-radius: 3px;
 `
 export const Sec = styled.div`
   display: flex;
@@ -283,14 +247,14 @@ export const Field = styled.label`
 const control = css`
   width: 100%;
   min-width: 0;
-  height: 32px;
-  padding: 0 10px;
-  border-radius: 8px;
-  border: 1px solid var(--d-line);
-  background: var(--d-paper);
-  color: var(--d-ink);
+  height: 30px;
+  padding: 0 9px;
+  border-radius: 3px;
+  border: 1px solid var(--n-line);
+  background: var(--n-sheet);
+  color: var(--n-ink);
   font-size: 13px;
-  &:focus { outline: none; border-color: var(--d-acc); box-shadow: 0 0 0 3px var(--d-acc-soft); }
+  &:focus { outline: none; border-color: var(--p-text); box-shadow: inset 0 0 0 1px var(--p-text); }
   &[aria-invalid='true'] { border-color: var(--d-bad-ink); }
   &:disabled { opacity: 0.6; }
 `
@@ -323,19 +287,19 @@ export const List = styled.table`
   table-layout: fixed;
   border-collapse: collapse;
   font-size: 13px;
-  th { font: 500 10.5px var(--d-mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--d-faint); text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--d-line); white-space: nowrap; }
-  td { padding: 10px 12px; border-bottom: 1px solid var(--d-line); vertical-align: middle; }
-  th.num, td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  th { position: sticky; top: 0; z-index: 1; font-size: 12px; font-weight: 600; color: var(--n-soft); text-align: left; padding: 0 12px; height: 34px; background: var(--n-panel); border-bottom: 1px solid var(--n-line); white-space: nowrap; }
+  td { padding: 9px 12px; border-bottom: 1px solid var(--n-fence); vertical-align: middle; }
+  th.num, td.num { text-align: right; }
   tbody tr { cursor: pointer; }
-  tbody tr:hover td { background: var(--d-well); }
-  tbody tr[aria-selected='true'] td { background: var(--d-acc-soft); }
-  .note-line { display: flex; align-items: center; gap: 5px; max-width: 100%; margin-top: 3px; padding: 2px 8px 2px 6px; border: 0; border-radius: 999px;
-    background: var(--d-warn-bg); color: var(--d-warn-ink); font: inherit; font-size: 11.5px; cursor: pointer; }
+  tbody tr:hover td { background: var(--n-hover); }
+  tbody tr[aria-selected='true'] td { background: var(--p-chosen); box-shadow: inset 0 1px 0 color-mix(in srgb, var(--p-deep) 65%, var(--n-sheet)), inset 0 -1px 0 color-mix(in srgb, var(--p-deep) 65%, var(--n-sheet)); }
+  td:last-child { text-align: right; white-space: nowrap; }
+  .note-line { display: flex; align-items: center; gap: 5px; max-width: 100%; margin-top: 3px; padding: 0; border: 0; border-radius: 0;
+    background: none; color: var(--n-soft); font: inherit; font-size: 11.5px; cursor: pointer; }
+  .note-line svg { color: var(--p-needs-you-text); }
   .note-line svg { flex: 0 0 auto; width: 12px; height: 12px; }
   .note-line span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .note-line small { flex: 0 0 auto; opacity: .75; }
-  .row-note { opacity: 0; }
-  tbody tr:hover .row-note, .row-note:focus-visible { opacity: 1; }
   @media (max-width: 1080px) { .c-due { display: none; } }
   @media (max-width: 900px) { .c-issued { display: none; } }
 `
@@ -345,7 +309,7 @@ export const Stat = styled(Card)`
   gap: 2px;
   padding: 12px 14px;
   min-width: 0;
-  .v { font-size: 19px; font-weight: 600; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .v { font-size: 19px; font-weight: 600; letter-spacing: -0.02em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .l { font-size: 11.5px; color: var(--d-muted); }
 `
 export const Callout = styled.div<{ $tone?: Tone }>`
@@ -353,34 +317,32 @@ export const Callout = styled.div<{ $tone?: Tone }>`
   gap: 10px;
   align-items: flex-start;
   padding: 10px 12px;
-  border-radius: 10px;
-  background: ${({ $tone }) => ($tone && $tone !== 'neutral' ? toneBg[$tone] : 'var(--d-panel-strong)')};
-  border: 1px solid ${({ $tone }) => ($tone && $tone !== 'neutral' ? 'transparent' : 'var(--d-edge)')};
-  color: ${({ $tone }) => ($tone && $tone !== 'neutral' ? toneInk[$tone] : 'var(--d-ink)')};
+  border-radius: 3px;
+  background: var(--n-panel);
+  border: 1px solid ${({ $tone }) => ($tone && $tone !== 'neutral' ? toneInk[$tone] : 'var(--n-line)')};
+  color: var(--n-ink);
   font-size: 12.5px;
   b { font-weight: 600; }
   .sp { flex: 1; }
-  svg { width: 15px; height: 15px; flex: 0 0 auto; margin-top: 1px; }
+  svg { width: 15px; height: 15px; flex: 0 0 auto; margin-top: 1px; color: ${({ $tone }) => ($tone && $tone !== 'neutral' ? toneInk[$tone] : 'var(--n-soft)')}; }
 `
 export const Seg = styled.div`
   display: inline-flex;
   gap: 2px;
-  padding: 3px;
-  border-radius: 9px;
-  background: var(--d-well);
 `
 export const SegBtn = styled.button<{ $on?: boolean }>`
-  height: 24px;
+  height: 26px;
   padding: 0 10px;
   border: 0;
-  border-radius: 7px;
-  background: ${({ $on }) => ($on ? 'var(--d-paper)' : 'transparent')};
-  color: ${({ $on }) => ($on ? 'var(--d-ink)' : 'var(--d-soft)')};
+  border-radius: 3px;
+  background: transparent;
+  color: ${({ $on }) => ($on ? 'var(--n-ink)' : 'var(--n-soft)')};
   font-size: 12px;
   font-weight: ${({ $on }) => ($on ? 600 : 500)};
-  box-shadow: ${({ $on }) => ($on ? '0 1px 2px rgba(16, 22, 40, 0.08)' : 'none')};
   cursor: pointer;
   white-space: nowrap;
+  &:hover { background: var(--n-hover); }
+  ${({ $on }) => ($on ? css`${selectedRow} border-radius: 3px;` : '')}
 `
 export const Switch = styled.label<{ $on?: boolean }>`
   display: inline-flex;
@@ -398,10 +360,13 @@ export const Avatar = styled.span<{ $hue: number; $size?: number }>`
   justify-content: center;
   width: ${({ $size = 24 }) => $size}px;
   height: ${({ $size = 24 }) => $size}px;
-  border-radius: 50%;
+  border-radius: 3px;
   flex: 0 0 auto;
-  background: oklch(0.55 0.12 ${({ $hue }) => $hue});
-  color: #fff;
+  /* Initials on grey: a client is told apart by name, not by a colour. */
+  background: var(--n-hover);
+  box-shadow: inset 0 0 0 1px var(--n-line);
+  color: var(--n-soft);
+  --hue: ${({ $hue }) => $hue};
   font-size: ${({ $size = 24 }) => Math.round($size * 0.42)}px;
   font-weight: 600;
 `
@@ -423,9 +388,9 @@ export const Scrim = styled.div`
 `
 export const Sheet = styled.div`
   ${frost}
-  background: var(--d-panel-strong);
-  border-radius: 18px;
-  box-shadow: 0 24px 60px rgba(30, 40, 70, 0.24);
+  background: var(--n-sheet);
+  border-radius: 4px;
+  box-shadow: 0 8px 28px rgb(0 0 0 / 0.22);
   display: flex;
   flex-direction: column;
   width: min(880px, 100%);
@@ -439,12 +404,10 @@ export const Popover = styled.div`
   display: flex;
   flex-direction: column;
   gap: 1px;
-  padding: 6px;
-  border-radius: 12px;
-  background: var(--d-popover);
-  border: 1px solid var(--d-edge);
-  backdrop-filter: var(--d-blur);
-  -webkit-backdrop-filter: var(--d-blur);
+  padding: 4px 0;
+  border-radius: 3px;
+  background: var(--n-sheet);
+  border: 1px solid var(--n-line);
   box-shadow: var(--d-shadow-float);
 `
 export const MenuItem = styled.button<{ $on?: boolean; $danger?: boolean }>`
@@ -454,24 +417,24 @@ export const MenuItem = styled.button<{ $on?: boolean; $danger?: boolean }>`
   height: 30px;
   padding: 0 10px;
   border: 0;
-  border-radius: 8px;
-  background: ${({ $on }) => ($on ? 'var(--d-acc-soft)' : 'transparent')};
-  color: ${({ $danger }) => ($danger ? 'var(--d-bad-ink)' : 'var(--d-ink)')};
+  border-radius: 0;
+  background: ${({ $on }) => ($on ? 'var(--p-chosen)' : 'transparent')};
+  box-shadow: ${({ $on }) => ($on ? 'var(--p-chosen-edge)' : 'none')};
+  color: ${({ $danger }) => ($danger ? 'var(--p-failed-text)' : 'var(--n-ink)')};
   font-size: 13px;
   font-weight: ${({ $on }) => ($on ? 600 : 500)};
   text-align: left;
   white-space: nowrap;
   cursor: pointer;
-  &:hover:not(:disabled) { background: var(--d-well); }
+  &:hover:not(:disabled) { background: ${({ $on }) => ($on ? 'var(--p-chosen)' : 'var(--n-hover)')}; }
   &:disabled { opacity: 0.5; cursor: default; }
-  small { margin-left: auto; padding-left: 14px; font: 500 10.5px var(--d-mono); color: var(--d-faint); }
+  small { margin-left: auto; padding-left: 14px; font-size: 11.5px; color: var(--n-faint); }
 `
 export const MenuHead = styled.span`
   padding: 6px 10px 4px;
-  font: 500 10px var(--d-mono);
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--d-faint);
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--n-soft);
 `
 export const Toast = styled.div`
   position: absolute;
@@ -484,7 +447,7 @@ export const Toast = styled.div`
   gap: 10px;
   max-width: min(720px, 90%);
   padding: 9px 14px;
-  border-radius: 10px;
+  border-radius: 3px;
   background: var(--platform-colors-tooltip-bg, var(--platform-colors-text));
   color: var(--platform-colors-tooltip-text, var(--platform-colors-text-inverse));
   font-size: 12.5px;
@@ -500,34 +463,27 @@ export const TimelineItem = styled.div<{ $tone?: Tone; $last?: boolean; $pending
   gap: 10px;
   padding: 5px 0;
   .k { display: flex; flex-direction: column; align-items: center; }
-  .k i { display: block; width: 10px; height: 10px; margin-top: 3px; border-radius: 50%; background: var(--d-paper); border: 2px ${({ $pending }) => ($pending ? 'dashed' : 'solid')} ${({ $tone }) => ($tone && $tone !== 'neutral' ? toneInk[$tone] : $tone === 'neutral' ? 'var(--d-edge-strong)' : 'var(--d-acc)')}; }
+  .k i { display: block; width: 10px; height: 10px; margin-top: 3px; border-radius: 1px; background: var(--d-paper); border: 2px ${({ $pending }) => ($pending ? 'dashed' : 'solid')} ${({ $tone }) => ($tone && $tone !== 'neutral' ? toneInk[$tone] : $tone === 'neutral' ? 'var(--d-edge-strong)' : 'var(--d-acc)')}; }
   .k s { display: ${({ $last }) => ($last ? 'none' : 'block')}; flex: 1; width: 2px; margin-top: 2px; background: var(--d-line); }
   b { font-size: 12.5px; font-weight: 600; }
   .w { font-size: 11.5px; color: var(--d-muted); }
 `
+/** An icon-only button, where space is tight: raised like every button, always there, named by its tooltip. */
 export const IconBtn = styled.button`
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  ${quiet}
   width: 26px;
   height: 26px;
   padding: 0;
-  border: 0;
-  border-radius: 7px;
-  background: transparent;
-  color: var(--d-muted);
-  cursor: pointer;
-  &:hover:not(:disabled) { background: var(--d-well); color: var(--d-ink); }
-  &:disabled { opacity: 0.4; cursor: default; }
-  svg { width: 15px; height: 15px; }
+  color: var(--n-soft);
+  svg { width: 14px; height: 14px; }
 `
 export const Slot = styled.div`
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 10px 12px;
-  border: 1px dashed var(--d-edge-strong);
-  border-radius: 10px;
+  border: 1px dashed var(--n-strong);
+  border-radius: 3px;
   color: var(--d-muted);
   font-size: 12.5px;
   svg { width: 15px; height: 15px; flex: 0 0 auto; }

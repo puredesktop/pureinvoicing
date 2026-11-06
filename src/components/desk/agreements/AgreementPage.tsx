@@ -39,7 +39,7 @@ export function AgreementPage({ product: p, store, agreement: a, disabled }: { p
   const exportPdf = () => p.act(() => invoiceCommands.exportAgreementPdf({ agreementId: a.id }), r => (r as { status: string }).status === 'saved' ? 'Agreement PDF saved.' : undefined)
   return (
     <>
-      <TopBar as="div" style={{ height: 48, borderTop: '1px solid var(--d-line)', background: 'transparent', backdropFilter: 'none' }}>
+      <TopBar as="div" style={{ height: 48, background: 'transparent' }}>
         <Btn $quiet $sm onClick={() => p.openAgreement(null)}><Icon.back />Agreements</Btn>
         <Mono style={{ fontSize: 14, color: a.numberText ? undefined : 'var(--d-muted)' }}>{a.numberText ?? 'Draft'}</Mono>
         <AgreementStatusChip status={a.status} />
@@ -408,13 +408,13 @@ function LiveArea({ value, onCommit, ...rest }: { value: string; onCommit: (valu
 
 const Outline = styled.nav`
   flex: 0 0 228px; display: flex; flex-direction: column; gap: 1px; padding: 14px 10px; border-right: 1px solid var(--d-line); overflow: auto; min-height: 0;
-  a { display: flex; align-items: center; gap: 9px; padding: 6px 8px; border-radius: 8px; color: var(--d-ink); text-decoration: none; font-size: 13px; }
+  a { display: flex; align-items: center; gap: 9px; padding: 6px 8px; border-radius: 3px; color: var(--d-ink); text-decoration: none; font-size: 13px; }
   a:hover { background: var(--d-well); }
   .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .mark { flex: 0 0 14px; width: 14px; height: 14px; border-radius: 999px; box-sizing: border-box; border: 2px solid var(--d-line); display: grid; place-items: center; color: var(--d-paper); }
+  .mark { flex: 0 0 14px; width: 14px; height: 14px; border-radius: 3px; box-sizing: border-box; border: 2px solid var(--d-line); display: grid; place-items: center; color: var(--d-paper); }
   .mark.todo { border-color: var(--d-warn-ink); } .mark.done { background: var(--d-ok-ink); border-color: var(--d-ok-ink); }
   .mark svg { width: 8px; height: 8px; }
-  .card { margin-top: 8px; padding: 10px; border-radius: 10px; background: var(--d-paper); border: 1px solid var(--d-line); display: flex; flex-direction: column; gap: 4px; font-size: 12px; }
+  .card { margin-top: 8px; padding: 10px; border-radius: 3px; background: var(--d-paper); border: 1px solid var(--d-line); display: flex; flex-direction: column; gap: 4px; font-size: 12px; }
   .card button { border: 0; background: none; padding: 0; text-align: left; font: inherit; color: var(--d-acc-ink, var(--d-acc)); cursor: pointer; }
 `
 const Desk = styled.main`
@@ -429,19 +429,19 @@ const Paper = styled.article`
   .title { margin: 10px 0 0; font-family: inherit; font-size: 26px; font-weight: 600; line-height: 1.2; border: 0; padding: 2px 0; background: none; color: inherit; width: 100%; outline: none; border-radius: 4px; }
   input.title:focus, input.heading:focus { box-shadow: 0 0 0 2px var(--d-acc-soft); }
   .between { margin: 0 0 8px; color: #3b4a57; font-size: 13.5px; }
-  .registered { padding: 14px 16px; border-radius: 10px; background: #f3f6f8; font-family: var(--d-ui, inherit); font-size: 13px; }
-  section { display: flex; flex-direction: column; gap: 4px; padding: 6px 10px 8px; margin: 0 -10px; border-radius: 8px; scroll-margin-top: 20px; }
+  .registered { padding: 14px 16px; border-radius: 3px; background: #f3f6f8; font-family: var(--d-ui, inherit); font-size: 13px; }
+  section { display: flex; flex-direction: column; gap: 4px; padding: 6px 10px 8px; margin: 0 -10px; border-radius: 3px; scroll-margin-top: 20px; }
   section.todo { background: #fdf7e8; }
   .head { display: flex; align-items: center; gap: 8px; }
   .num { flex: 0 0 auto; min-width: 20px; font-family: var(--d-mono); font-size: 11px; color: var(--d-acc-ink, var(--d-acc)); }
   .heading { flex: 1; min-width: 0; margin: 0; font-family: inherit; font-size: 16px; font-weight: 600; border: 0; background: none; color: inherit; padding: 2px 0; outline: none; border-radius: 4px; }
   .tools { display: flex; gap: 2px; opacity: 0; transition: opacity .12s; }
   section:hover .tools, section:focus-within .tools { opacity: 1; }
-  .tools button { border: 0; background: none; color: #8a949e; padding: 4px; border-radius: 6px; cursor: pointer; display: grid; place-items: center; }
+  .tools button { border: 0; background: none; color: #8a949e; padding: 4px; border-radius: 3px; cursor: pointer; display: grid; place-items: center; }
   .tools button:hover:not(:disabled) { background: #eef2f4; color: #16202a; }
   .tools svg { width: 14px; height: 14px; }
-  textarea { width: 100%; box-sizing: border-box; resize: none; border: 1px solid transparent; border-radius: 6px; padding: 4px 6px; margin: 0 -6px; font: inherit; color: inherit; background: none; line-height: 1.6; overflow: hidden; }
-  textarea:hover { border-color: #e3e8ec; } textarea:focus { outline: none; border-color: var(--d-acc); box-shadow: 0 0 0 3px var(--d-acc-soft); background: #fff; }
+  textarea { width: 100%; box-sizing: border-box; resize: none; border: 1px solid transparent; border-radius: 3px; padding: 4px 6px; margin: 0 -6px; font: inherit; color: inherit; background: none; line-height: 1.6; overflow: hidden; }
+  textarea:hover { border-color: #e3e8ec; } textarea:focus { outline: none; border-color: var(--d-acc); box-shadow: inset 0 0 0 1px var(--d-acc); background: #fff; }
   .prose p { margin: 0 0 8px; white-space: pre-wrap; }
   table.schedule { width: 100%; border-collapse: collapse; font-size: 13px; margin: 6px 0 2px; }
   .schedule td { padding: 5px 0; border-bottom: 1px solid #e3e8ec; } .schedule .when { color: #5f6b76; font-size: 12px; } .schedule .n { text-align: right; font-family: var(--d-mono); }
@@ -449,15 +449,15 @@ const Paper = styled.article`
   .signatures .line { height: 34px; border-bottom: 1px solid #16202a; margin: 6px 0 4px; display: flex; align-items: flex-end; font-size: 13px; padding-bottom: 3px; }
 `
 const MilestoneRow = styled.div`
-  display: flex; align-items: flex-start; gap: 8px; padding: 8px 10px; border-radius: 10px; background: var(--d-paper); border: 1px solid var(--d-line);
+  display: flex; align-items: flex-start; gap: 8px; padding: 8px 10px; border-radius: 3px; background: var(--d-paper); border: 1px solid var(--d-line);
   &.due { border-color: var(--d-acc); box-shadow: 0 0 0 2px var(--d-acc-soft); } &.invoiced { opacity: .8; }
   .n { font-family: var(--d-mono); font-size: 11px; color: var(--d-faint); padding-top: 5px; }
   .body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-  .body input, .amount { border: 1px solid transparent; border-radius: 6px; background: none; font: inherit; font-size: 13px; color: var(--d-ink); padding: 2px 4px; margin-left: -4px; min-width: 0; }
+  .body input, .amount { border: 1px solid transparent; border-radius: 3px; background: none; font: inherit; font-size: 13px; color: var(--d-ink); padding: 2px 4px; margin-left: -4px; min-width: 0; }
   .body input:hover, .amount:hover { border-color: var(--d-line); } .body input:focus, .amount:focus { outline: none; border-color: var(--d-acc); }
   .label { font-size: 13px; }
   .meta { font-size: 11.5px; color: var(--d-muted); } .meta select { border: 0; background: none; font: inherit; color: var(--d-muted); padding: 0; margin-left: -2px; cursor: pointer; }
   .amount { width: 86px; text-align: right; font-family: var(--d-mono); } .amount-text { font-size: 12.5px; padding-top: 3px; }
   .actions { display: flex; align-items: center; gap: 4px; }
-  .rm { border: 0; background: none; color: var(--d-faint); padding: 4px; cursor: pointer; border-radius: 6px; } .rm svg { width: 12px; height: 12px; }
+  .rm { border: 0; background: none; color: var(--d-faint); padding: 4px; cursor: pointer; border-radius: 3px; } .rm svg { width: 12px; height: 12px; }
 `

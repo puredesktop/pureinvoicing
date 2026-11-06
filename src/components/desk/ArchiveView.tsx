@@ -7,7 +7,7 @@ import { workspaceState } from '../../lib/invoices/queries'
 import { PaymentDialog, type PaymentTarget } from './PaymentDialog'
 import { NotesDialog } from './Annotations'
 import type { ArchiveQuery, InvoiceStore } from '../../lib/invoices/types'
-import { Avatar, Body, Btn, Card, Chip, Dot, Hint, Kicker, List, Main, Meta, Mono, Panel, Pill, Popover, MenuHead, MenuItem, Rail, RailRow, SearchBox, Select } from './deskStyles'
+import { Avatar, Body, Btn, Card, Chip, Dot, Hint, IconBtn, Kicker, List, Main, Meta, Mono, Panel, Pill, Popover, MenuHead, MenuItem, Rail, RailRow, SearchBox, Select } from './deskStyles'
 import { Icon, StandingChip, hueOf, initials, shortDate, whenWords } from './bits'
 import { FirstUse } from './FirstUse'
 import { ImportSheet } from './ImportSheet'
@@ -102,7 +102,7 @@ export function ArchiveView({ product: p, setup: s, store, disabled }: { product
               </div>
             ) : (
               <List>
-                <thead><tr><th style={{ width: 132 }}>Number</th><th>Client</th><th className="c-issued" style={{ width: 104 }}>Issued</th><th className="c-due" style={{ width: 88 }}>Due</th><th className="num" style={{ width: 124 }}>Total</th><th style={{ width: 150 }}>Status</th><th style={{ width: p.archive.items.some(row => row.status !== 'draft' && row.mark !== 'paid') ? 212 : 120 }} /></tr></thead>
+                <thead><tr><th style={{ width: 132 }}>Number</th><th>Client</th><th className="c-issued" style={{ width: 104 }}>Issued</th><th className="c-due" style={{ width: 88 }}>Due</th><th className="num" style={{ width: 124 }}>Total</th><th style={{ width: 150 }}>Status</th><th style={{ width: p.archive.items.some(row => row.status !== 'draft' && row.mark !== 'paid') ? 226 : 136 }} /></tr></thead>
                 <tbody>
                   {p.archive.items.map(row => {
                     const draft = row.status === 'draft'
@@ -114,11 +114,13 @@ export function ArchiveView({ product: p, setup: s, store, disabled }: { product
                         <td className="c-due" style={{ color: row.mark === 'overdue' ? 'var(--d-bad-ink)' : undefined }}>{row.dueDate ? shortDate(row.dueDate) : <Meta>—</Meta>}</td>
                         <td className="num"><Mono>{formatMoney(row.total, row.currency)}</Mono></td>
                         <td><div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                          {draft ? <><Chip>Draft</Chip><Hint>edited {whenWords(row.updatedAt)}</Hint></> : <>{row.mark === 'paid' ? <button type="button" className="chip-button" title={`Paid ${row.marks?.paidAt ?? ''}${row.marks?.paidReference ? ` · ${row.marks.paidReference}` : ''}. Click to edit the payment.`} disabled={disabled} onClick={event => { event.stopPropagation(); setPaying(paymentTarget(row)) }} style={{ border: 0, padding: 0, background: 'none', cursor: 'pointer', font: 'inherit' }}><StandingChip mark="paid" paidAt={row.marks?.paidAt} /></button> : <StandingChip mark={row.mark as InvoiceMark} daysOverdue={row.daysOverdue} paidAt={row.marks?.paidAt} sentAt={row.marks?.sentAt} />}{row.historical ? <Chip $tone="info">Historical</Chip> : null}</>}
+                          {draft ? <><Chip>Draft</Chip><Hint>edited {whenWords(row.updatedAt)}</Hint></> : <>{row.mark === 'paid' ? <button type="button" className="chip-button" title={`Paid ${row.marks?.paidAt ?? ''}${row.marks?.paidReference ? ` · ${row.marks.paidReference}` : ''}. Click to edit the payment.`} disabled={disabled} onClick={event => { event.stopPropagation(); setPaying(paymentTarget(row)) }} style={{ border: 0, padding: 0, background: 'none', cursor: 'pointer', font: 'inherit' }}><StandingChip mark="paid" paidAt={row.marks?.paidAt} /></button> : <StandingChip mark={row.mark as InvoiceMark} daysOverdue={row.daysOverdue} paidAt={row.marks?.paidAt} sentAt={row.marks?.sentAt} />}</>}
                         </div></td>
                         <td onClick={event => event.stopPropagation()}>
-                          {!draft ? <Btn $sm $quiet className="row-note" aria-label={`Notes on ${row.numberText}`} title={row.documentCount ? `Notes · ${row.documentCount} linked document${row.documentCount === 1 ? '' : 's'}` : 'Notes'} style={{ marginRight: 2, padding: '0 6px' }} onClick={() => setNotesFor(row.id)}><Icon.note /></Btn> : null}{!draft && row.mark !== 'paid' ? <Btn $sm disabled={disabled} style={{ marginRight: 6 }} onClick={() => setPaying(paymentTarget(row))}>Mark paid</Btn> : null}
+                          {/* The word buttons line up from the right; the notes button, icon only, holds the right edge. */}
+                          {!draft && row.mark !== 'paid' ? <Btn $sm disabled={disabled} style={{ marginRight: 6 }} onClick={() => setPaying(paymentTarget(row))}>Mark paid</Btn> : null}
                           {draft ? <Btn $sm onClick={() => p.openInvoice(row.id)}>Continue</Btn> : <Btn $sm disabled={disabled} onClick={() => { void p.openInvoice(row.id).then(() => p.download({ kind: 'downloadVersion' })) }}>PDF</Btn>}
+                          {!draft ? <IconBtn aria-label={`Notes on ${row.numberText}`} title={row.documentCount ? `Notes · ${row.documentCount} linked document${row.documentCount === 1 ? '' : 's'}` : 'Notes'} style={{ marginLeft: 6, verticalAlign: 'middle' }} onClick={() => setNotesFor(row.id)}><Icon.note /></IconBtn> : <span style={{ display: 'inline-block', width: 32 }} />}
                         </td>
                       </tr>
                     )

@@ -88,11 +88,11 @@ export function PeopleLookupInput({ kind, value, onChange, onPick, placeholder, 
 
 const Box = styled.div`
   position: relative;
-  input { width: 100%; min-height: 32px; border: 1px solid var(--d-line); border-radius: 8px; padding: 6px 9px; background: var(--d-paper); color: var(--d-ink); outline: none; }
-  input:focus { border-color: var(--d-acc); box-shadow: 0 0 0 3px var(--d-acc-soft); }
+  input { width: 100%; min-height: 32px; border: 1px solid var(--d-line); border-radius: 3px; padding: 6px 9px; background: var(--d-paper); color: var(--d-ink); outline: none; }
+  input:focus { border-color: var(--d-acc); box-shadow: inset 0 0 0 1px var(--d-acc); }
   input[aria-invalid='true'] { border-color: var(--d-bad-ink); }
-  ul { position: absolute; z-index: 30; left: 0; right: 0; top: calc(100% + 4px); margin: 0; padding: 4px; list-style: none; background: var(--d-popover); color: var(--d-ink); border: 1px solid var(--d-edge-strong); border-radius: 10px; box-shadow: var(--d-shadow-float); backdrop-filter: var(--d-blur); -webkit-backdrop-filter: var(--d-blur); }
-  li[role='option'] { display: flex; flex-direction: column; gap: 1px; padding: 6px 9px; border-radius: 7px; cursor: pointer; }
+  ul { position: absolute; z-index: 30; left: 0; right: 0; top: calc(100% + 4px); margin: 0; padding: 4px; list-style: none; background: var(--d-popover); color: var(--d-ink); border: 1px solid var(--d-edge-strong); border-radius: 3px; box-shadow: var(--d-shadow-float); backdrop-filter: var(--d-blur); -webkit-backdrop-filter: var(--d-blur); }
+  li[role='option'] { display: flex; flex-direction: column; gap: 1px; padding: 6px 9px; border-radius: 3px; cursor: pointer; }
   li[role='option'] b { font-size: 13px; font-weight: 600; }
   li[role='option'] span { font-size: 12px; color: var(--d-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   li[aria-selected='true'] { background: var(--d-acc-soft); }

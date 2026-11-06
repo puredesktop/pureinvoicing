@@ -127,7 +127,7 @@ export function ProposalPage({ product: p, store, proposal, disabled, compact }:
   const shown = editable ? form : toForm(version.content)
   return (
     <>
-      <TopBar as="div" {...bar} style={{ height: 48, borderTop: '1px solid var(--d-line)', background: 'transparent', backdropFilter: 'none' }}>
+      <TopBar as="div" {...bar} style={{ height: 48, background: 'transparent' }}>
         <Btn $quiet $sm onClick={() => p.openProposal(null)}><Icon.back />{compact ? 'Back' : 'Proposals'}</Btn>
         <span style={{ fontSize: 14, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>{content.title || 'Untitled proposal'}</span>
         <ProposalStatusChip status={version.status} />

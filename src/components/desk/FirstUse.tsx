@@ -11,7 +11,7 @@ export function FirstUse({ product: p, setup: s, store, disabled }: { product: I
   const lookDone = !!store.template.logoAssetId || !!store.template.letterheadText.trim()
   const step = (n: number, done: boolean, title: string) => (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5, fontWeight: done ? 500 : 600 }}>
-      <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 20, height: 20, borderRadius: '50%', background: done ? 'var(--d-ok-bg)' : 'var(--d-acc)', color: done ? 'var(--d-ok-ink)' : 'var(--d-on-acc)', font: `600 11px var(--d-mono)` }}>{done ? '✓' : n}</span>{title}
+      <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 20, height: 20, borderRadius: 3, background: done ? 'var(--d-ok-bg)' : 'var(--d-acc)', color: done ? 'var(--d-ok-ink)' : 'var(--d-on-acc)', font: `600 11px var(--d-mono)` }}>{done ? '✓' : n}</span>{title}
     </div>
   )
   return (
