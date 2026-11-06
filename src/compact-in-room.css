@@ -1,3 +1,12 @@
+/* Follows the desk's theme: each colour is light-dark(its light value, its dark partner), the dark ones the held greys
+   of docs/held-apps.md. A light theme leaves the colour scheme as it was; a dark one says dark, and parts that asked
+   for light take --held-scheme instead. */
+[data-compact-room]:is([data-platform-theme='dark'] *),
+html:has([data-compact-room])[data-platform-theme='dark'] {
+  color-scheme: dark;
+  --held-scheme: dark;
+}
+
 /* Compact PureInvoicing, held in an entry of the Executive room (useCompactInRoom). The frame carries
    data-compact-room and the desk data-compact-desk only then, and every rule here starts from one of those or from
    data-held-in-room, so with compact off nothing in this file touches the app. Chrome is hidden, not removed: it all
@@ -5,36 +14,36 @@
 
 /* One white surface whatever the desktop's theme: the room's paper is white, so the ink has to be too. */
 [data-compact-room] {
-  --platform-colors-text: #1b1d21;
-  --platform-colors-text-secondary: #565a62;
-  --platform-colors-text-disabled: #7a7e87;
-  --platform-colors-elevated: #ffffff;
-  --platform-colors-divider: #dde1e7;
-  --platform-colors-border-strong: #c6c8cd;
-  --platform-colors-surface-hover: #f3f4f5;
-  --pure-chrome-soft: #565a62;
-  --pure-chrome-muted: #565a62;
-  --pure-chrome-paper: #ffffff;
-  --pure-chrome-line: #dde1e7;
-  --pure-chrome-well: #f3f4f5;
-  --glass-panel: #ffffff;
-  --glass-panel-strong: #ffffff;
-  --glass-popover: #ffffff;
+  --platform-colors-text: light-dark(#1b1d21, #ededed);
+  --platform-colors-text-secondary: light-dark(#565a62, #bdbdbd);
+  --platform-colors-text-disabled: light-dark(#7a7e87, #969696);
+  --platform-colors-elevated: light-dark(#ffffff, #1c1c1c);
+  --platform-colors-divider: light-dark(#dde1e7, #3a3a3a);
+  --platform-colors-border-strong: light-dark(#c6c8cd, #4a4a4a);
+  --platform-colors-surface-hover: light-dark(#f3f4f5, #272727);
+  --pure-chrome-soft: light-dark(#565a62, #bdbdbd);
+  --pure-chrome-muted: light-dark(#565a62, #bdbdbd);
+  --pure-chrome-paper: light-dark(#ffffff, #1c1c1c);
+  --pure-chrome-line: light-dark(#dde1e7, #3a3a3a);
+  --pure-chrome-well: light-dark(#f3f4f5, #272727);
+  --glass-panel: light-dark(#ffffff, #1c1c1c);
+  --glass-panel-strong: light-dark(#ffffff, #1c1c1c);
+  --glass-popover: light-dark(#ffffff, #1c1c1c);
   --glass-edge: transparent;
-  --glass-edge-strong: #c6c8cd;
-  --glass-line: #dde1e7;
-  --glass-well: #f3f4f5;
+  --glass-edge-strong: light-dark(#c6c8cd, #4a4a4a);
+  --glass-line: light-dark(#dde1e7, #3a3a3a);
+  --glass-well: light-dark(#f3f4f5, #272727);
   --glass-blur: none;
-  --pure-success-muted: #e6f4ea;
-  --pure-success-text: #1c6b36;
-  --pure-attention-muted: #fbf1da;
-  --pure-attention-text: #80570a;
-  --pure-danger-muted: #fbe9e7;
-  --pure-danger-text: #a8281d;
-  --pure-info-muted: #e8f0fb;
-  --pure-info-text: #225a9c;
-  background: #ffffff;
-  color: #1b1d21;
+  --pure-success-muted: light-dark(#e6f4ea, #24352a);
+  --pure-success-text: light-dark(#1c6b36, #74bf85);
+  --pure-attention-muted: light-dark(#fbf1da, #392f16);
+  --pure-attention-text: light-dark(#80570a, #cfa260);
+  --pure-danger-muted: light-dark(#fbe9e7, #3e2a29);
+  --pure-danger-text: light-dark(#a8281d, #fc8271);
+  --pure-info-muted: light-dark(#e8f0fb, #263140);
+  --pure-info-text: light-dark(#225a9c, #74aef6);
+  background: light-dark(#ffffff, #1c1c1c);
+  color: light-dark(#1b1d21, #ededed);
 }
 
 /* The shared header: wordmark, model and assistant controls. Full app gives them back. */
@@ -51,7 +60,7 @@
 
 /* A draft or an offer: its real page, one column, lying flat. */
 [data-compact-desk] > [data-compact-show] {
-  background: #ffffff;
+  background: light-dark(#ffffff, #1c1c1c);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
 }
@@ -92,7 +101,7 @@
   flex: 1 1 auto;
   min-height: 0;
   overflow: auto;
-  background: #ffffff;
+  background: light-dark(#ffffff, #1c1c1c);
   font-size: 13px;
   font-variant-numeric: tabular-nums;
 }
@@ -212,7 +221,7 @@
   min-height: 44px;
   padding: 0 16px 0 10px;
   border-bottom: 1px solid var(--d-line);
-  background: #ffffff;
+  background: light-dark(#ffffff, #1c1c1c);
 }
 .invoicing-compact-label {
   font-size: 13px;
@@ -257,7 +266,7 @@
 }
 .invoicing-compact-lines th {
   padding: 6px 0 6px 12px;
-  border-bottom: 1px solid #cdd1d7;
+  border-bottom: 1px solid light-dark(#cdd1d7, #4a4a4a);
   color: var(--d-muted);
   font-size: 12px;
   font-weight: 600;
@@ -306,7 +315,7 @@
   align-items: baseline;
   margin-top: 3px;
   padding-top: 7px;
-  border-top: 1px solid #cdd1d7;
+  border-top: 1px solid light-dark(#cdd1d7, #4a4a4a);
   font-size: 13px;
   font-weight: 600;
 }
@@ -333,7 +342,7 @@
 /* Flat on white from the first paint, before the app has said anything, in a room entry or on the Personal page. */
 html:has([data-compact-room]),
 html:has([data-compact-room]) body {
-  background: #ffffff;
+  background: light-dark(#ffffff, #1c1c1c);
 }
 
 /* The held look: square-ish corners, no tinted blocks, one muted accent, tabular figures. */
