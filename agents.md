@@ -290,6 +290,8 @@ last normal tab. Format: ps-suite#1013, file formats §2b.
 | A copy of the offer to share | `exportProposal` with the `versionId` |
 | Invoice the accepted offer | `convertProposalToInvoice`, then the usual issue steps |
 
+**Asking first.** `finalizeInvoice` (a number given for good), `markInvoice` (sent and paid marks), `markAgreementSigned`, `updateContractorBill` (paid, over the cap, removed), `discardAgreement` and `deleteAgreementTemplate` (deleted for good) are declared `destructive`: they ask the person first at every level except "never ask".
+
 ## Output style
 
 Short and concrete. Name invoices by their label (`INV-2026-004`), clients by

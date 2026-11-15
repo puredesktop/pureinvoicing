@@ -816,7 +816,8 @@
             ],
             "additionalProperties": false
           },
-          "requiresApproval": true
+          "requiresApproval": true,
+          "risk": "destructive"
         },
         {
           "name": "discardInvoiceDraft",
@@ -1007,7 +1008,8 @@
             ],
             "additionalProperties": false
           },
-          "requiresApproval": true
+          "requiresApproval": true,
+          "risk": "destructive"
         },
         {
           "name": "addInvoiceNote",
@@ -1667,7 +1669,8 @@
             ],
             "additionalProperties": false
           },
-          "requiresApproval": true
+          "requiresApproval": true,
+          "risk": "destructive"
         },
         {
           "name": "closeAgreement",
@@ -1886,7 +1889,8 @@
             ],
             "additionalProperties": false
           },
-          "requiresApproval": true
+          "requiresApproval": true,
+          "risk": "destructive"
         },
         {
           "name": "searchContractors",
@@ -2249,7 +2253,8 @@
             ],
             "additionalProperties": false
           },
-          "requiresApproval": true
+          "requiresApproval": true,
+          "risk": "destructive"
         },
         {
           "name": "findAgreementSpecifics",
@@ -2482,7 +2487,8 @@
             ],
             "additionalProperties": false
           },
-          "requiresApproval": true
+          "requiresApproval": true,
+          "risk": "destructive"
         },
         {
           "name": "addAgreementNote",
