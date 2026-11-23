@@ -879,6 +879,25 @@ export const PUREINVOICING_FUNCTIONS: readonly AppFunctionDefinition<InvoicingAg
           if (typeof item.unitPrice !== 'number' || !Number.isFinite(item.unitPrice) || item.unitPrice < 0) {
             throw new Error(`lineItems.${i}.unitPrice must be a non-negative number.`)
           }
+          if (
+            item.discountPercent !== undefined &&
+            item.discountPercent !== null &&
+            (typeof item.discountPercent !== 'number' ||
+              !Number.isFinite(item.discountPercent) ||
+              item.discountPercent < 0 ||
+              item.discountPercent > 100)
+          ) {
+            throw new Error(`lineItems.${i}.discountPercent must be a number between 0 and 100, or null.`)
+          }
+          if (
+            item.taxPercent !== undefined &&
+            item.taxPercent !== null &&
+            (typeof item.taxPercent !== 'number' ||
+              !Number.isFinite(item.taxPercent) ||
+              item.taxPercent < 0)
+          ) {
+            throw new Error(`lineItems.${i}.taxPercent must be a non-negative number, or null.`)
+          }
           return {
             description: item.description,
             quantity: item.quantity,
@@ -892,9 +911,10 @@ export const PUREINVOICING_FUNCTIONS: readonly AppFunctionDefinition<InvoicingAg
       }
 
       const draftId = newId()
-      const today = todayOf(ctx)
+      const nowDate = ctx.now ? ctx.now() : new Date()
+      const today = localToday(nowDate)
       const store = await ctx.repository.transact(s => {
-        let next = createDraft(s, sourceInvoiceId, undefined, draftId, new Date().toISOString(), today)
+        let next = createDraft(s, sourceInvoiceId, undefined, draftId, nowDate.toISOString(), today)
         if (resolvedClientId) {
           next = applyDefaults(next, draftId, ['client'], resolvedClientId)
         }

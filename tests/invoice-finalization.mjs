@@ -26,9 +26,10 @@ try {
     await symlink(target, join(dir, 'node_modules', name), 'dir')
   }
   for (const file of ['agents/handlers/index', 'agents/replies', 'agents/validateDomainArguments', 'agents/domainSchemas',
+    'ui/palette.generated', 'ui/styles',
     'components/desk/IssueSheet', 'components/desk/IssuedView', 'components/desk/PreviewPane', 'components/desk/bits', 'components/desk/deskStyles',
     'lib/invoices/dates', 'lib/agentRefs', 'components/desk/PaymentDialog', 'components/desk/Annotations']) {
-    const extension = file.endsWith('deskStyles') || file.startsWith('agents') || file.startsWith('lib') ? 'ts' : 'tsx'
+    const extension = file.endsWith('deskStyles') || file.startsWith('agents') || file.startsWith('lib') || file.startsWith('ui/') ? 'ts' : 'tsx'
     const source = await readFile(`src/${file}.${extension}`, 'utf8')
     const code = ts.transpileModule(source, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext, jsx: ts.JsxEmit.ReactJSX } }).outputText
     await mkdir(join(dir, 'src', file.substring(0, file.lastIndexOf('/'))), { recursive: true })
@@ -36,7 +37,7 @@ try {
       .replace('@purescience/platform-ui/bridge/agentToolHelpers', '../../bridge/agentToolHelpers.js')
       .replace("import styled from 'styled-components';", "import { styled } from 'styled-components';"))
   }
-  const helperSource = await readFile('node_modules/@purescience/platform-ui/src/bridge/agentToolHelpers.ts', 'utf8')
+  const helperSource = await readFile(require.resolve('@purescience/platform-ui/bridge/agentToolHelpers'), 'utf8')
   await writeFile(join(dir, 'src/bridge/agentToolHelpers.js'), ts.transpileModule(helperSource, { compilerOptions: { module: ts.ModuleKind.ESNext } }).outputText)
   let now = Date.now(), pdfFailure = false, cancelled = false, unreadable = false, blockedPages = false, exports = 0, beforeExport
   const digest = async bytes => createHash('sha256').update(bytes).digest('hex')

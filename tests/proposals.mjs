@@ -19,9 +19,11 @@ try {
       await writeFile(join(dir, directory, file.replace(/\.ts$/, '.js')), transpile(await readFile(`${directory}/${file}`, 'utf8')))
     }
   }
+  const require = createRequire(join(process.cwd(), 'package.json'))
+  const helperPath = require.resolve('@purescience/platform-ui/bridge/agentToolHelpers')
   await mkdir(join(dir, 'src/bridge'), { recursive: true })
   await writeFile(join(dir, 'src/bridge/invoiceStorageCapabilities.js'), transpile(await readFile('src/bridge/invoiceStorageCapabilities.ts', 'utf8')))
-  await writeFile(join(dir, 'src/bridge/agentToolHelpers.js'), transpile(await readFile('node_modules/@purescience/platform-ui/src/bridge/agentToolHelpers.ts', 'utf8')))
+  await writeFile(join(dir, 'src/bridge/agentToolHelpers.js'), transpile(await readFile(helperPath, 'utf8')))
   await writeFile(join(dir, 'src/lib/invoices/workspace.js'), 'export const invoiceCommands = globalThis.proposalTest.commands')
   const load = name => import(pathToFileURL(join(dir, `src/lib/invoices/${name}.js`)).href)
   const { parseStore } = await load('parse')
@@ -33,7 +35,6 @@ try {
   const { calculateInvoice } = await load('calculations')
   const { provisionalLabel } = await load('updates')
   // A spec-compliant HTML parser, from the workspace's own dependencies.
-  const require = createRequire(join(process.cwd(), 'package.json'))
   const { parse } = await import(pathToFileURL(require.resolve('parse5')).href)
 
   // ── Disk stand-in: compare-and-swap writes, a failure before the write lands, and a lost acknowledgement after it lands.
