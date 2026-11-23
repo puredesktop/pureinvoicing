@@ -15,13 +15,15 @@ try {
   for (const directory of ['src/lib/invoices', 'src/agents', 'src/agents/handlers']) {
     await mkdir(join(dir, directory), { recursive: true })
     for (const file of await readdir(directory)) {
-      if (!file.endsWith('.ts') || file === 'workspace.ts') continue
+      if (!file.endsWith('.ts') || file === 'workspace.ts' || file === 'functions.ts' || file === 'operationsRegistry.ts' || file.endsWith('.test.ts')) continue
       await writeFile(join(dir, directory, file.replace(/\.ts$/, '.js')), transpile(await readFile(`${directory}/${file}`, 'utf8')))
     }
   }
+  const require = createRequire(join(process.cwd(), 'package.json'))
+  const helperPath = require.resolve('@purescience/platform-ui/bridge/agentToolHelpers')
   await mkdir(join(dir, 'src/bridge'), { recursive: true })
   await writeFile(join(dir, 'src/bridge/invoiceStorageCapabilities.js'), transpile(await readFile('src/bridge/invoiceStorageCapabilities.ts', 'utf8')))
-  await writeFile(join(dir, 'src/bridge/agentToolHelpers.js'), transpile(await readFile('node_modules/@purescience/platform-ui/src/bridge/agentToolHelpers.ts', 'utf8')))
+  await writeFile(join(dir, 'src/bridge/agentToolHelpers.js'), transpile(await readFile(helperPath, 'utf8')))
   await writeFile(join(dir, 'src/lib/invoices/workspace.js'), 'export const invoiceCommands = globalThis.proposalTest.commands')
   const load = name => import(pathToFileURL(join(dir, `src/lib/invoices/${name}.js`)).href)
   const { parseStore } = await load('parse')
@@ -33,7 +35,6 @@ try {
   const { calculateInvoice } = await load('calculations')
   const { provisionalLabel } = await load('updates')
   // A spec-compliant HTML parser, from the workspace's own dependencies.
-  const require = createRequire(join(process.cwd(), 'package.json'))
   const { parse } = await import(pathToFileURL(require.resolve('parse5')).href)
 
   // ── Disk stand-in: compare-and-swap writes, a failure before the write lands, and a lost acknowledgement after it lands.
@@ -326,12 +327,19 @@ try {
   ;({ commands: ui } = await session())
   globalThis.proposalTest = { commands: ui }
   const { appAgentHandlers } = await import(pathToFileURL(join(dir, 'src/agents/handlers/index.js')).href)
-  const { APP_AGENT_TOOL_NAMES } = await import(pathToFileURL(join(dir, 'src/agents/catalog.js')).href)
+  const { APP_AGENT_TOOL_NAMES, PUREINVOICING_ALL_ATOMIC_TOOL_NAMES } = await import(pathToFileURL(join(dir, 'src/agents/catalog.js')).href)
+  const { PUREINVOICING_ATOMIC_TOOL_SCHEMAS } = await import(pathToFileURL(join(dir, 'src/agents/atomicToolSchemas.js')).href)
   const manifest = JSON.parse(await readFile('plugin.json', 'utf8'))
   const proposalTools = ['listProposals', 'getProposal', 'createProposal', 'updateProposal', 'setProposalStatus', 'exportProposal', 'convertProposalToInvoice']
   for (const name of proposalTools) {
-    assert.ok(APP_AGENT_TOOL_NAMES.includes(name) && typeof appAgentHandlers[name] === 'function', name)
-    assert.equal(manifest.app.agents.tools.find(t => t.name === name).requiresApproval, !['listProposals', 'getProposal'].includes(name))
+    assert.ok(PUREINVOICING_ALL_ATOMIC_TOOL_NAMES.includes(name) && typeof appAgentHandlers[name] === 'function', name)
+    const spec = PUREINVOICING_ATOMIC_TOOL_SCHEMAS.find(t => t.name === name)
+    assert.ok(spec, name)
+    assert.equal(spec.requiresApproval, !['listProposals', 'getProposal'].includes(name))
+    if (spec.exposure === 'always') {
+      assert.ok(APP_AGENT_TOOL_NAMES.includes(name), name)
+      assert.equal(manifest.app.agents.tools.find(t => t.name === name).requiresApproval, spec.requiresApproval)
+    }
   }
   const tool = async (name, args) => {
     const result = await appAgentHandlers[name]({ arguments: args })

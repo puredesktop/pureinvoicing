@@ -19,7 +19,7 @@ try {
       await writeFile(join(dir, directory, file.replace(/\.tsx?$/, '.js')), transpile(await readFile(`${directory}/${file}`, 'utf8')))
     }
   }
-  await copy('src/lib/invoices'); await copy('src/lib', ['agentRefs.ts']); await copy('src/components/desk/proposals'); await copy('src/components/desk', ['bits.tsx', 'deskStyles.ts'])
+  await copy('src/lib/invoices'); await copy('src/lib', ['agentRefs.ts']); await copy('src/ui'); await copy('src/components/desk/proposals'); await copy('src/components/desk', ['bits.tsx', 'deskStyles.ts'])
   await mkdir(join(dir, 'src/bridge'), { recursive: true })
   await writeFile(join(dir, 'src/bridge/invoiceStorageCapabilities.js'), transpile(await readFile('src/bridge/invoiceStorageCapabilities.ts', 'utf8')))
   await writeFile(join(dir, 'src/lib/invoices/workspace.js'), 'export const invoiceCommands = globalThis.proposalTest.commands')

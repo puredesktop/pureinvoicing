@@ -59,6 +59,22 @@ series and tax filing are outside this app.
   displayed rounded amounts. Never do the arithmetic yourself and never
   infer a tax rate.
 
+## Operations tiers (Functions, Core Tools, Extended Escape Hatch)
+
+PureInvoicing exposes 25 high-signal operations in `plugin.json` while keeping all 71 atomic tools 100% reachable:
+
+1. **Composite App Functions (`fn_*`, always exposed — prefer these first for multi-step workflows):**
+   - `fn_receivablesBriefing`: one-shot AR briefing (setup readiness, YTD/all-time totals, overdue/open invoices, drafts, ready milestones, unbilled retainers, open proposals).
+   - `fn_clientBillingDossier`: complete billing profile for one client (stats, overdue/open/draft/paid invoices, agreements, proposals, and client `invoice-rules` library excerpts).
+   - `fn_agingAndCashflowReport`: AR aging buckets (current, 1–30, 31–60, 61–90, 90+ days), recent cash collections, average days to pay, and top debtors by currency.
+   - `fn_buildClientInvoiceDraft`: resolve a client, apply defaults, and save a complete draft in one transaction (never issues or assigns a number).
+   - `fn_auditInvoiceReadiness`: check a draft or correction for issuance blockers, business/sequence readiness, client rules, and potential duplicate invoices.
+   - `fn_reconcilePaymentsAudit`: audit issued-not-sent, sent-overdue, paid-without-reference, and contractor bills, optionally matching incoming payments to open invoices (read-only).
+   - `fn_agreementsBillingSummary`: all agreements, billing totals, ready-to-invoice milestones, unbilled retainer months, draft blockers, and contractor bill warnings.
+   - `fn_proposalsPipelineOverview`: proposals by stage and currency, accepted offers awaiting conversion, open offers awaiting decision, and incomplete drafts.
+2. **Core Atomic Tools (14 always exposed):** `getWorkspaceState`, `searchInvoices`, `getInvoice`, `searchClients`, `saveClient`, `createInvoiceDraft`, `updateInvoiceDraft`, `prepareInvoiceFinalization`, `finalizeInvoice`, `exportInvoicePdf`, `markInvoice`, `listAgreements`, `getAgreement`, `listProposals`.
+3. **Extended Specialist Tools (57 hidden by default, 100% reachable on demand):** use `discoverAppTools` to search specialist tools (presentation, corrections, notes, linked documents, bulk import, agreement editing/signing/milestones, contractors, templates, library, proposal edits/conversion), then invoke via `callExtendedReadTool` (read-only) or `callExtendedTool` (mutating; set `confirmDestructive: true` for destructive tools).
+
 ## Read-first workflow
 
 1. `getWorkspaceState` first: setup status, the pattern and the next label,
