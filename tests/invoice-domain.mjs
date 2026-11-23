@@ -11,7 +11,7 @@ try {
   for (const directory of ['src/lib/invoices', 'src/agents']) {
     await mkdir(join(temporary, directory), { recursive: true })
     for (const file of await readdir(directory)) {
-      if (!file.endsWith('.ts') || file === 'workspace.ts' || file === 'catalog.ts') continue
+      if (!file.endsWith('.ts') || file === 'workspace.ts' || file === 'catalog.ts' || file === 'functions.ts' || file === 'operationsRegistry.ts' || file.endsWith('.test.ts')) continue
       const source = await readFile(`${directory}/${file}`, 'utf8')
       const output = ts.transpileModule(source, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext } }).outputText
       await writeFile(join(temporary, directory, file.replace(/\.ts$/, '.js')), output.replace(/(from\s+['"])(\.[^'"]+)(['"])/g, '$1$2.js$3'))
@@ -37,12 +37,21 @@ try {
   const { InvoiceRepository } = await load('repository')
   const { createInvoiceCommands } = await load('commands')
   const { domainSchemas } = await import(pathToFileURL(join(temporary, 'src/agents/domainSchemas.js')).href)
+  const { PUREINVOICING_ATOMIC_TOOL_SCHEMAS } = await import(pathToFileURL(join(temporary, 'src/agents/atomicToolSchemas.js')).href)
   const { validateDomainArguments } = await import(pathToFileURL(join(temporary, 'src/agents/validateDomainArguments.js')).href)
   const manifest = JSON.parse(await readFile('plugin.json', 'utf8'))
+  const readOnlyNames = ['getWorkspaceState', 'getInvoice', 'searchInvoices', 'searchClients', 'getInvoicePreview', 'prepareInvoiceFinalization', 'previewInvoiceImport', 'listAgreements', 'getAgreement', 'searchContractors', 'listAgreementTemplates', 'getAgreementTemplate', 'findAgreementSpecifics', 'previewAgreementFromTemplate', 'listLibrary', 'readLibraryDocument', 'listProposals', 'getProposal']
   for (const [name, schema] of Object.entries(domainSchemas)) {
-    const tool = manifest.app.agents.tools.find(tool => tool.name === name)
-    assert.deepEqual(schema, tool.inputSchema)
-    assert.equal(tool.requiresApproval, !['getWorkspaceState', 'getInvoice', 'searchInvoices', 'searchClients', 'getInvoicePreview', 'prepareInvoiceFinalization', 'previewInvoiceImport', 'listAgreements', 'getAgreement', 'searchContractors', 'listAgreementTemplates', 'getAgreementTemplate', 'findAgreementSpecifics', 'previewAgreementFromTemplate', 'listLibrary', 'readLibraryDocument', 'listProposals', 'getProposal'].includes(name))
+    const spec = PUREINVOICING_ATOMIC_TOOL_SCHEMAS.find(tool => tool.name === name)
+    assert.ok(spec, `Missing atomic schema spec for ${name}`)
+    assert.deepEqual(schema, spec.inputSchema)
+    assert.equal(spec.requiresApproval, !readOnlyNames.includes(name))
+    if (spec.exposure === 'always') {
+      const tool = manifest.app.agents.tools.find(tool => tool.name === name)
+      assert.ok(tool, `Core tool ${name} missing from plugin.json`)
+      assert.deepEqual(schema, tool.inputSchema)
+      assert.equal(tool.requiresApproval, spec.requiresApproval)
+    }
   }
   assert.throws(() => validateDomainArguments('updateInvoiceDraft', { draftId: 'a', changes: { number: 4 } }))
   assert.throws(() => validateDomainArguments('setNextInvoiceNumber', { nextNumber: 4, unregisteredHistoryChecked: false }))
